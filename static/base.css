@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@theme {
+  --color-gruvbox: #282828;
+  --color-kahootRed: #FF5C5C;
+  --color-kahootGreen: #4CAF50;
+  --color-kahootYellow: #FFD64D;
+  --color-kahootBlue: #0099E6;
+}

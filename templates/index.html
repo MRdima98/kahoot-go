@@ -1,0 +1,49 @@
+{{ template "head.html" .}}
+
+<div class="w-screen h-screen flex justify-center items-center">
+    <div class="bg-gray-200 p-6 w-4/5 h-4/5 text-9xl">
+        <div class="flex flex-col justify-between items-center w-full h-full">
+            <div class="flex justify-center items-center font-bold p-4 bg-blue-200 w-full
+                py-8
+                ">
+                How many eggs in a dozen?
+            </div>
+            <div class="flex justify-around items-center w-full">
+                <div class="flex flex-col justify-center items-center">
+                    <span>4</span>
+                    <span>ans</span>
+                </div>
+                <img id="test" class="p-4 w-160" src="static/pictures/hor" />
+                <div class="w-64 h-64 bg-red-500 rounded-full flex justify-center items-center ">
+                    timer
+                </div>
+            </div>
+            <div class="flex gap-2 w-full justify-around">
+                <div class="bg-kahootRed w-full h-full flex justify-center gap-5 py-8">
+                    ans1
+                    <!--<img src="svgs/1.svg" width={40} height={40} />-->
+                    <!--{question?.answer1}-->
+                </div>
+                <div class="bg-kahootBlue w-full flex justify-center py-8 gap-5">
+                    ans2
+                    <!--<img src="svgs/2.svg" width={40} height={40} />-->
+                    <!--{question?.answer2}-->
+                </div>
+            </div>
+            <div class="flex gap-2 w-full justify-around">
+                <div class="bg-kahootGreen w-full h-full flex justify-center py-8 gap-5">
+                    ans3
+                    <!--<img src="svgs/3.svg" width={40} height={40} />-->
+                    <!--{question?.answer3}-->
+                </div>
+                <div class="bg-kahootYellow w-full flex justify-center py-8 gap-5">
+                    ans4
+                    <!--<img src="svgs/4.svg" width={40} height={40} />-->
+                    <!--{question?.answer4}-->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ template "footer.html" .}}
