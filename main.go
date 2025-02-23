@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"text/template"
 
 	"github.com/gorilla/websocket"
@@ -111,15 +111,25 @@ func socketHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	fmt.Println("We hit it \n")
+	fmt.Println("We hit it")
+
 	for {
-		messageType, p, err := conn.ReadMessage()
-		fmt.Println("Message", string(p), " type", messageType)
+		_, p, err := conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		if err := conn.WriteMessage(messageType, p); err != nil {
+
+		var result map[string]any
+		err = json.Unmarshal(p, &result)
+		if err != nil {
+			fmt.Println("Error unmarshaling JSON:", err)
+			return
+		}
+
+		fmt.Println(result["chat_message"])
+
+		if err := conn.WriteMessage(websocket.TextMessage, []byte(`<div id="jhonny" hx-swap-oob="beforeend">Monsters</div>`)); err != nil {
 			log.Println(err)
 			return
 		}

@@ -6,4 +6,10 @@ window.addEventListener("load", function () {
   } else {
     img.style.width = "1800px";
   }
+  //document.body.addEventListener("htmx:wsAfterMessage", function (event) {
+  //  console.log("Message received:", event.detail.message);
+  //  document
+  //    .querySelector("#chat_messages")
+  //    .insertAdjacentHTML("beforeend", event.detail.message);
+  //});
 });
