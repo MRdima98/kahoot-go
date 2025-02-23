@@ -2,11 +2,8 @@ window.addEventListener("load", function () {
   const img = document.getElementById("test");
 
   if (img.naturalWidth < img.naturalHeight) {
-    img.style.width = "150px";
+    img.style.width = "600px";
   } else {
-    img.style.width = "300px";
+    img.style.width = "1800px";
   }
-
-  console.log("Width:", img.naturalWidth);
-  console.log("Height:", img.naturalHeight);
 });

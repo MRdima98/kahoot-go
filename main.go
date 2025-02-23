@@ -7,33 +7,58 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"text/template"
+
+	"github.com/gorilla/websocket"
 )
 
 const (
-	index       = "index.html"
-	index_path  = "templates/index.html"
-	head_path   = "templates/head.html"
-	footer_path = "templates/footer.html"
+	index              = "index.html"
+	playerMenu         = "playerMenu.html"
+	playerControls     = "playerControls.html"
+	indexPath          = "templates/index.html"
+	headPath           = "templates/head.html"
+	footerPath         = "templates/footer.html"
+	playerMenuPath     = "templates/playerMenu.html"
+	playerControlsPath = "templates/playerControls.html"
 )
 
-var tmpl = template.Must(template.ParseFiles(index_path, footer_path, head_path))
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
+
+var Answered = 0
+var tmpl = template.Must(
+	template.ParseFiles(
+		indexPath, footerPath, headPath, playerControlsPath, playerMenuPath,
+	),
+)
 
 func main() {
-	_, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
-	// fs = http.FileServer(http.Dir("./public"))
-	// http.Handle("/public/", http.StripPrefix("/public/", fs))
-
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/game", gameHandler)
 	http.HandleFunc("/player", playerHandler)
+	http.HandleFunc("/socket", socketHandler)
 
-	fmt.Println("Starting service on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	srv := &http.Server{Addr: ":8080"}
+
+	go func() {
+		fmt.Println("Starting service on port 8080")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+
+	<-ctx.Done()
+	log.Println("Shutting down server...")
+	srv.Shutdown(context.Background())
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -48,15 +73,55 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func gameHandler(w http.ResponseWriter, r *http.Request) {
-	err := tmpl.ExecuteTemplate(w, index, "hello")
+	err := tmpl.ExecuteTemplate(w, index, struct {
+		Path     string
+		Answered int
+	}{
+		r.URL.Path,
+		Answered,
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func playerHandler(w http.ResponseWriter, r *http.Request) {
-	err := tmpl.ExecuteTemplate(w, index, "hello")
+	if r.Method == "POST" {
+		fmt.Println(r.FormValue("name"))
+		err := tmpl.ExecuteTemplate(w, playerControls, nil)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	err := tmpl.ExecuteTemplate(w, playerMenu, struct {
+		Path string
+	}{
+		r.URL.Path,
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func socketHandler(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	fmt.Println("We hit it \n")
+	for {
+		messageType, p, err := conn.ReadMessage()
+		fmt.Println("Message", string(p), " type", messageType)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		if err := conn.WriteMessage(messageType, p); err != nil {
+			log.Println(err)
+			return
+		}
 	}
 }

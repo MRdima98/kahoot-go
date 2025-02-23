@@ -7,39 +7,48 @@
                 py-8
                 ">
                 How many eggs in a dozen?
+                How many eggs in a dozen?
+                How many eggs in a dozen?
             </div>
             <div class="flex justify-around items-center w-full">
                 <div class="flex flex-col justify-center items-center">
-                    <span>4</span>
+                    <span hx-ext="ws" ws-connect="/socket">socket
+                        <form id="form" ws-send>
+                            <input name="chat_message" type="text">
+                        </form>
+                    </span>
+                    <span>{{ .Answered }}</span>
                     <span>ans</span>
                 </div>
                 <img id="test" class="p-4 w-160" src="static/pictures/hor" />
                 <div class="w-64 h-64 bg-red-500 rounded-full flex justify-center items-center ">
-                    timer
+                    60
                 </div>
             </div>
-            <div class="flex gap-2 w-full justify-around">
-                <div class="bg-kahootRed w-full h-full flex justify-center gap-5 py-8">
-                    ans1
-                    <!--<img src="svgs/1.svg" width={40} height={40} />-->
-                    <!--{question?.answer1}-->
+            <div class="flex flex-col gap-5 w-full">
+                <div class="flex gap-5 w-full justify-around">
+                    <div class="bg-kahootRed w-full h-full flex justify-center gap-16 py-8">
+                        <img class="w-30" src="static/svgs/1.svg" />
+                        ans1
+                        <!--{question?.answer1}-->
+                    </div>
+                    <div class="bg-kahootBlue w-full flex justify-center py-8 gap-16">
+                        <img class="w-30" src="static/svgs/2.svg" />
+                        ans2
+                        <!--{question?.answer2}-->
+                    </div>
                 </div>
-                <div class="bg-kahootBlue w-full flex justify-center py-8 gap-5">
-                    ans2
-                    <!--<img src="svgs/2.svg" width={40} height={40} />-->
-                    <!--{question?.answer2}-->
-                </div>
-            </div>
-            <div class="flex gap-2 w-full justify-around">
-                <div class="bg-kahootGreen w-full h-full flex justify-center py-8 gap-5">
-                    ans3
-                    <!--<img src="svgs/3.svg" width={40} height={40} />-->
-                    <!--{question?.answer3}-->
-                </div>
-                <div class="bg-kahootYellow w-full flex justify-center py-8 gap-5">
-                    ans4
-                    <!--<img src="svgs/4.svg" width={40} height={40} />-->
-                    <!--{question?.answer4}-->
+                <div class="flex gap-5 w-full justify-around">
+                    <div class="bg-kahootGreen w-full h-full flex justify-center py-8 gap-16">
+                        <img class="w-30" src="static/svgs/3.svg" />
+                        ans3
+                        <!--{question?.answer3}-->
+                    </div>
+                    <div class="bg-kahootYellow w-full flex justify-center py-8 gap-16">
+                        <img class="w-30" src="static/svgs/4.svg" />
+                        ans4
+                        <!--{question?.answer4}-->
+                    </div>
                 </div>
             </div>
         </div>
