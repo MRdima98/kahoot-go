@@ -1,20 +1,16 @@
 {{ template "head.html" .}}
 
-<div class="flex flex-col justify-center items-center h-96 text-white">
-    <form hx-post="/player" hx-swap="outerHTML" class="flex flex-col gap-1 justify-center items-center h-full w-full">
-        <span> Quizaara: Kahoot per Saretta</span>
-        <span> Qual è il tuo nome? </span>
-        <input type="text" name="name" />
-        <button class="bg-blue-800">
-            La accendiamo?
-        </button>
-        <!--<button hx-post="/player"-->
-        <!--    hx-trigger="click"-->
-        <!--    hx-target="#parent-div"-->
-        <!--    hx-swap="outerHTML">-->
-        <!--    Click Me!-->
-        <!--</button>-->
-    </form>
+<div hx-ext="ws" ws-connect="/socket" class="flex flex-col justify-center h-full">
+    <div id="UI" class="flex flex-col justify-center items-center h-96 text-white">
+        <form id="form" ws-send class="flex flex-col gap-1 justify-center items-center h-full w-full">
+            <span> Quizaara: Kahoot per Saretta</span>
+            <span> Qual è il tuo nome? </span>
+            <input type="text" name="name" />
+            <button class="bg-blue-800">
+                La accendiamo?
+            </button>
+        </form>
+    </div>
 </div>
 
 {{ template "footer.html" .}}

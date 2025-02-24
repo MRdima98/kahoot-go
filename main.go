@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"slices"
 	"text/template"
 
 	"github.com/gorilla/websocket"
@@ -28,6 +30,7 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 }
+var players = []string{}
 
 var Answered = 0
 var tmpl = template.Must(
@@ -127,9 +130,26 @@ func socketHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fmt.Println(result["chat_message"])
+		fmt.Println(result["name"])
 
-		if err := conn.WriteMessage(websocket.TextMessage, []byte(`<div id="jhonny" hx-swap-oob="beforeend">Monsters</div>`)); err != nil {
+		if !slices.Contains(players, result["name"].(string)) {
+			players = append(players, result["name"].(string))
+		}
+
+		fmt.Println(players)
+
+		tmpl, err := template.ParseFiles(playerControlsPath)
+		if err != nil {
+			log.Println(err)
+		}
+
+		var tpl bytes.Buffer
+		err = tmpl.Execute(&tpl, nil)
+		if err != nil {
+			log.Fatalf("template execution: %s", err)
+		}
+
+		if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
 			log.Println(err)
 			return
 		}
