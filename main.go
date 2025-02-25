@@ -1,15 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
+	"kahoot/handlers"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"slices"
 	"text/template"
 
 	"github.com/gorilla/websocket"
@@ -48,7 +46,7 @@ func main() {
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/game", gameHandler)
 	http.HandleFunc("/player", playerHandler)
-	http.HandleFunc("/socket", socketHandler)
+	http.HandleFunc("/socket", handlers.SocketHandler)
 
 	srv := &http.Server{Addr: ":8080"}
 
@@ -105,53 +103,5 @@ func playerHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func socketHandler(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	fmt.Println("We hit it")
-
-	for {
-		_, p, err := conn.ReadMessage()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		var result map[string]any
-		err = json.Unmarshal(p, &result)
-		if err != nil {
-			fmt.Println("Error unmarshaling JSON:", err)
-			return
-		}
-
-		fmt.Println(result["name"])
-
-		if !slices.Contains(players, result["name"].(string)) {
-			players = append(players, result["name"].(string))
-		}
-
-		fmt.Println(players)
-
-		tmpl, err := template.ParseFiles(playerControlsPath)
-		if err != nil {
-			log.Println(err)
-		}
-
-		var tpl bytes.Buffer
-		err = tmpl.Execute(&tpl, nil)
-		if err != nil {
-			log.Fatalf("template execution: %s", err)
-		}
-
-		if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
-			log.Println(err)
-			return
-		}
 	}
 }
