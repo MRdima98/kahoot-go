@@ -19,13 +19,11 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 }
-var players = []string{}
 
 const (
 	playerControlsPath = "templates/playerControls.html"
 	connected          = "connected"
 	disconnected       = "disconnected"
-	playersKey         = "players"
 )
 
 type Player struct {
