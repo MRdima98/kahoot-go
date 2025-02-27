@@ -47,6 +47,7 @@ func main() {
 	http.HandleFunc("/game", gameHandler)
 	http.HandleFunc("/player", playerHandler)
 	http.HandleFunc("/socket", handlers.SocketHandler)
+	http.HandleFunc("/questions", handlers.QuestionsHandler)
 
 	srv := &http.Server{Addr: ":8080"}
 

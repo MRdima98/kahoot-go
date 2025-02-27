@@ -1,27 +1,28 @@
-<form id="UI" class="flex flex-col w-full gap-2">
+<div id="UI" class="flex flex-col w-full gap-2">
     <div class="flex justify-center items-center w-full gap-2">
-        <div class="bg-kahootRed py-9 w-full h-full flex justify-center items-center">
+        <div ws-send hx-post="/socket" hx-include="[name='answer1']"
+            class="bg-kahootRed py-9 w-full h-full flex justify-center items-center">
             <img class="w-10 h-10" src="static/svgs/1.svg" />
-            <input type="text" name="answer" hidden/>
+            <input type="text" name="answer1" value="bobby" hidden />
             <span>Ans1</span>
         </div>
 
         <div class="bg-kahootBlue py-9 w-full h-full flex justify-center items-center">
             <img class="w-10 h-10" src="static/svgs/2.svg" />
-            <input type="text" name="answer" hidden/>
+            <input type="text" name="answer2" value="minnie" hidden />
             <span>Ans2</span>
         </div>
     </div>
     <div class="flex justify-center items-center w-full gap-2">
         <div class="bg-kahootGreen py-9 w-full h-full flex justify-center items-center">
             <img class="w-10 h-10" src="static/svgs/3.svg" />
-            <input type="text" name="answer" hidden/>
+            <input type="text" name="answer3" value="pikachu" hidden />
             <span>Ans3</span>
         </div>
         <div class="bg-kahootYellow py-9 w-full h-full flex justify-center items-center">
             <img class="w-10 h-10" src="static/svgs/4.svg" />
-            <input type="text" name="answer" hidden/>
+            <input type="text" name="answer4" value="giacomo" hidden />
             <span>Ans4</span>
         </div>
     </div>
-</form>
+</div>

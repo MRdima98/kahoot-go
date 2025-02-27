@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"text/template"
 	"time"
 
@@ -26,6 +27,13 @@ const (
 	disconnected       = "disconnected"
 )
 
+type Answered struct {
+	answers_conn *websocket.Conn
+	count        int
+}
+
+var answered Answered
+
 type Player struct {
 	Name   string `json:"name"`
 	Status string `json:"status"`
@@ -33,8 +41,9 @@ type Player struct {
 }
 
 func SocketHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("\n\nOpened new connection!")
+	fmt.Println("\n\nOpened PLAYER connection!")
 	conn, err := upgrader.Upgrade(w, r, nil)
+
 	if err != nil {
 		log.Println(err)
 		return
@@ -66,6 +75,22 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println("Error unmarshaling JSON in for loop get:", err)
 			return
+		}
+
+		if result["answer1"] != nil {
+			fmt.Println("Res: ", result)
+
+			html := `
+			<div id="n_answered" hx-swap-oob="innerHTML">
+			%d
+			</div>
+			`
+			html = fmt.Sprintf(html, saveNAnswered(rdb))
+
+			if err := answered.answers_conn.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
+				log.Println(err)
+				return
+			}
 		}
 
 		if result["name"] != nil {
@@ -144,4 +169,56 @@ func savePlayerInfo(player Player, rdb *redis.Client, status string) {
 	}
 
 	log.Printf("Player %s %s", player.Name, player.Status)
+}
+
+func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n\nOpened GAME connection!")
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	rdb := redisClient()
+	tmp, err := rdb.Get(ctx, "n_answers").Result()
+	if err != nil {
+		log.Println("No count value in redis", err)
+		return
+	}
+
+	count, err := strconv.Atoi(tmp)
+	if err != nil {
+		log.Println("Converting to int", err)
+		return
+	}
+
+	answered.answers_conn = conn
+	answered.count = count
+
+	conn.SetCloseHandler(func(code int, text string) error {
+		rdb.Close()
+		return nil
+	})
+}
+
+func saveNAnswered(rdb *redis.Client) int {
+	n_answered := "n_answered"
+	tmp, err := rdb.Get(ctx, n_answered).Result()
+	if err != nil {
+		log.Println("Reading n_answered: ", err)
+	}
+
+	count, err := strconv.Atoi(tmp)
+	if err != nil {
+		log.Println("Converting n_answered: ", err)
+	}
+
+	count++
+
+	err = rdb.Set(ctx, n_answered, count, 0).Err()
+	if err != nil {
+		log.Println("Writing n_answered: ", err)
+	}
+
+	return count
 }
