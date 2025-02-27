@@ -27,12 +27,7 @@ const (
 	disconnected       = "disconnected"
 )
 
-type Answered struct {
-	answers_conn *websocket.Conn
-	count        int
-}
-
-var answered Answered
+var answered *websocket.Conn
 
 type Player struct {
 	Name   string `json:"name"`
@@ -40,6 +35,9 @@ type Player struct {
 	Score  int    `json:"score"`
 }
 
+// Write down what the player is answering
+// the game socket will reset the answered and write down the points
+// also will clear the current answer and reset the gray
 func SocketHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("\n\nOpened PLAYER connection!")
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -87,10 +85,26 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 			`
 			html = fmt.Sprintf(html, saveNAnswered(rdb))
 
-			if err := answered.answers_conn.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
+			if err := answered.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
 				log.Println(err)
 				return
 			}
+
+			html = `
+			<div id="ans1" ws-send hx-post="/socket" hx-include="[name='answer1']" hx-swap-oob="outerHTML"
+				class="bg-gray-200 py-9 w-full h-full flex justify-center items-center">
+				<img class="w-10 h-10" src="static/svgs/1.svg" />
+				<input type="text" name="answer1" value="bobby" hidden />
+				<span>Ans1</span>
+			</div>
+			`
+
+			fmt.Println("We are here", html)
+			if err := conn.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
+				log.Println(err)
+				return
+			}
+
 		}
 
 		if result["name"] != nil {
@@ -100,22 +114,22 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 				Score:  0,
 			}
 			savePlayerInfo(player, rdb, connected)
-		}
 
-		tmpl, err := template.ParseFiles(playerControlsPath)
-		if err != nil {
-			log.Println(err)
-		}
+			tmpl, err := template.ParseFiles(playerControlsPath)
+			if err != nil {
+				log.Println(err)
+			}
 
-		var tpl bytes.Buffer
-		err = tmpl.Execute(&tpl, nil)
-		if err != nil {
-			log.Printf("template execution: %s", err)
-		}
+			var tpl bytes.Buffer
+			err = tmpl.Execute(&tpl, nil)
+			if err != nil {
+				log.Printf("template execution: %s", err)
+			}
 
-		if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
-			log.Println(err)
-			return
+			if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+				log.Println(err)
+				return
+			}
 		}
 	}
 }
@@ -179,26 +193,7 @@ func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rdb := redisClient()
-	tmp, err := rdb.Get(ctx, "n_answers").Result()
-	if err != nil {
-		log.Println("No count value in redis", err)
-		return
-	}
-
-	count, err := strconv.Atoi(tmp)
-	if err != nil {
-		log.Println("Converting to int", err)
-		return
-	}
-
-	answered.answers_conn = conn
-	answered.count = count
-
-	conn.SetCloseHandler(func(code int, text string) error {
-		rdb.Close()
-		return nil
-	})
+	answered = conn
 }
 
 func saveNAnswered(rdb *redis.Client) int {

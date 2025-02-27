@@ -1,6 +1,6 @@
 <div id="UI" class="flex flex-col w-full gap-2">
-    <div class="flex justify-center items-center w-full gap-2">
-        <div ws-send hx-post="/socket" hx-include="[name='answer1']"
+    <div hx-ext="debug" class="flex justify-center items-center w-full gap-2">
+        <div id="ans1" ws-send hx-post="/socket" hx-include="[name='answer1']" hx-swap-oob="outerHTML"
             class="bg-kahootRed py-9 w-full h-full flex justify-center items-center">
             <img class="w-10 h-10" src="static/svgs/1.svg" />
             <input type="text" name="answer1" value="bobby" hidden />
