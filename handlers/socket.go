@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -25,6 +26,7 @@ const (
 	playerControlsPath = "templates/playerControls.html"
 	connected          = "connected"
 	disconnected       = "disconnected"
+	no_answer          = ""
 )
 
 var answered *websocket.Conn
@@ -32,6 +34,7 @@ var answered *websocket.Conn
 type Player struct {
 	Name   string `json:"name"`
 	Status string `json:"status"`
+	Answer string `json:"answer"`
 	Score  int    `json:"score"`
 }
 
@@ -60,6 +63,7 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 		rdb.Close()
 		return nil
 	})
+	var tmpl *template.Template
 
 	for {
 		_, p, err := conn.ReadMessage()
@@ -75,7 +79,7 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if result["answer1"] != nil {
+		if result["answer"] != nil {
 			fmt.Println("Res: ", result)
 
 			html := `
@@ -85,22 +89,27 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 			`
 			html = fmt.Sprintf(html, saveNAnswered(rdb))
 
-			if err := answered.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
-				log.Println(err)
+			if answered == nil {
+				fmt.Println("There is no open game")
 				return
 			}
 
-			html = `
-			<div id="ans1" ws-send hx-post="/socket" hx-include="[name='answer1']" hx-swap-oob="outerHTML"
-				class="bg-gray-200 py-9 w-full h-full flex justify-center items-center">
-				<img class="w-10 h-10" src="static/svgs/1.svg" />
-				<input type="text" name="answer1" value="bobby" hidden />
-				<span>Ans1</span>
-			</div>
-			`
+			if err := answered.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
+				fmt.Println("Can't sign that a player wrote a message", err)
+				return
+			}
 
-			fmt.Println("We are here", html)
-			if err := conn.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
+			var ans_button bytes.Buffer
+			err = tmpl.ExecuteTemplate(&ans_button, "red_answer", nil)
+			if err != nil {
+				log.Println(err)
+			}
+
+			gray := strings.ReplaceAll(ans_button.String(), "bg-kahootRed", "bg-gray-200")
+
+			fmt.Println(gray)
+
+			if err := conn.WriteMessage(websocket.TextMessage, []byte(gray)); err != nil {
 				log.Println(err)
 				return
 			}
@@ -111,11 +120,12 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 			player = Player{
 				Name:   result["name"].(string),
 				Status: connected,
+				Answer: no_answer,
 				Score:  0,
 			}
 			savePlayerInfo(player, rdb, connected)
 
-			tmpl, err := template.ParseFiles(playerControlsPath)
+			tmpl, err = template.ParseFiles(playerControlsPath)
 			if err != nil {
 				log.Println(err)
 			}

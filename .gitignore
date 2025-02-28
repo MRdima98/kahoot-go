@@ -5,6 +5,8 @@ go.work.sum
 # env file
 .env
 
+# my stuff
 tmp
 tailwindcss
 bin
+*.rdb
