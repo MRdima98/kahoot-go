@@ -38,6 +38,20 @@ type Player struct {
 	Score  int    `json:"score"`
 }
 
+type Options struct {
+	Ans1 string `json:"ans1"`
+	Ans2 string `json:"ans2"`
+	Ans3 string `json:"ans3"`
+	Ans4 string `json:"ans4"`
+}
+
+var colors = map[string]string{
+	"red_answer":    "bg-kahootRed",
+	"blue_answer":   "bg-kahootBlue",
+	"green_answer":  "bg-kahootGreen",
+	"yellow_answer": "bg-kahootYellow",
+}
+
 // Write down what the player is answering
 // the game socket will reset the answered and write down the points
 // also will clear the current answer and reset the gray
@@ -79,41 +93,20 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if result["answer"] != nil {
-			fmt.Println("Res: ", result)
+		if result["ans1"] != nil {
+			whichAnswer("red_answer", rdb, tmpl, conn)
+		}
 
-			html := `
-			<div id="n_answered" hx-swap-oob="innerHTML">
-			%d
-			</div>
-			`
-			html = fmt.Sprintf(html, saveNAnswered(rdb))
+		if result["ans2"] != nil {
+			whichAnswer("blue_answer", rdb, tmpl, conn)
+		}
 
-			if answered == nil {
-				fmt.Println("There is no open game")
-				return
-			}
+		if result["ans3"] != nil {
+			whichAnswer("green_answer", rdb, tmpl, conn)
+		}
 
-			if err := answered.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
-				fmt.Println("Can't sign that a player wrote a message", err)
-				return
-			}
-
-			var ans_button bytes.Buffer
-			err = tmpl.ExecuteTemplate(&ans_button, "red_answer", nil)
-			if err != nil {
-				log.Println(err)
-			}
-
-			gray := strings.ReplaceAll(ans_button.String(), "bg-kahootRed", "bg-gray-200")
-
-			fmt.Println(gray)
-
-			if err := conn.WriteMessage(websocket.TextMessage, []byte(gray)); err != nil {
-				log.Println(err)
-				return
-			}
-
+		if result["ans4"] != nil {
+			whichAnswer("yellow_answer", rdb, tmpl, conn)
 		}
 
 		if result["name"] != nil {
@@ -131,7 +124,7 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			var tpl bytes.Buffer
-			err = tmpl.Execute(&tpl, nil)
+			err = tmpl.Execute(&tpl, readOptions(rdb))
 			if err != nil {
 				log.Printf("template execution: %s", err)
 			}
@@ -226,4 +219,74 @@ func saveNAnswered(rdb *redis.Client) int {
 	}
 
 	return count
+}
+
+func readOptions(rdb *redis.Client) Options {
+	fakeData := Options{
+		Ans1: "batman",
+		Ans2: "aquaman",
+		Ans3: "joker",
+		Ans4: "superman",
+	}
+
+	fake, err := json.Marshal(fakeData)
+	if err != nil {
+		log.Println("Marshal issues", err)
+	}
+
+	err = rdb.Set(ctx, "options", fake, 0).Err()
+	if err != nil {
+		log.Println("Writing options", err)
+	}
+
+	tmp, err := rdb.Get(ctx, "options").Result()
+	if err != nil {
+		log.Println("Reading options", err)
+	}
+
+	var options Options
+
+	err = json.Unmarshal([]byte(tmp), &options)
+	if err != nil {
+		log.Println("UNmarshal err: ", err)
+	}
+
+	fmt.Println(options)
+
+	return options
+}
+
+func whichAnswer(answer string, rdb *redis.Client, tmpl *template.Template, conn *websocket.Conn) {
+	html := `
+			<div id="n_answered" hx-swap-oob="innerHTML">
+			%d
+			</div>
+			`
+	html = fmt.Sprintf(html, saveNAnswered(rdb))
+
+	if answered == nil {
+		fmt.Println("There is no open game")
+		return
+	}
+
+	if err := answered.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
+		fmt.Println("Can't sign that a player wrote a message", err)
+		return
+	}
+
+	var ans_button bytes.Buffer
+	err := tmpl.ExecuteTemplate(&ans_button, answer, readOptions(rdb))
+	if err != nil {
+		log.Println(err)
+	}
+
+	gray := strings.ReplaceAll(ans_button.String(), colors[answer], "bg-gray-200")
+
+	fmt.Println(gray)
+
+	fmt.Println("We are doing", gray)
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(gray)); err != nil {
+		log.Println(err)
+		return
+	}
 }

@@ -1,28 +1,51 @@
 <div id="UI" class="flex flex-col w-full gap-2">
-    <div hx-ext="debug" class="flex justify-center items-center w-full gap-2">
-        <div id="ans1" ws-send hx-post="/socket" hx-include="[name='answer1']" hx-swap-oob="outerHTML"
-            class="bg-kahootRed py-9 w-full h-full flex justify-center items-center">
-            <img class="w-10 h-10" src="static/svgs/1.svg" />
-            <input type="text" name="answer1" value="bobby" hidden />
-            <span>Ans1</span>
-        </div>
-
-        <div class="bg-kahootBlue py-9 w-full h-full flex justify-center items-center">
-            <img class="w-10 h-10" src="static/svgs/2.svg" />
-            <input type="text" name="answer2" value="minnie" hidden />
-            <span>Ans2</span>
-        </div>
-    </div>
     <div class="flex justify-center items-center w-full gap-2">
-        <div class="bg-kahootGreen py-9 w-full h-full flex justify-center items-center">
-            <img class="w-10 h-10" src="static/svgs/3.svg" />
-            <input type="text" name="answer3" value="pikachu" hidden />
-            <span>Ans3</span>
-        </div>
-        <div class="bg-kahootYellow py-9 w-full h-full flex justify-center items-center">
-            <img class="w-10 h-10" src="static/svgs/4.svg" />
-            <input type="text" name="answer4" value="giacomo" hidden />
-            <span>Ans4</span>
-        </div>
+        <form class="w-full h-full">
+            {{ define "red_answer" }}
+            <button id="ans1" ws-send hx-post="/socket" hx-swap-oob="outerHTML"
+                class="bg-kahootRed py-9 w-full h-full flex justify-center items-center">
+                <img class="w-10 h-10" src="static/svgs/1.svg" />
+                <input type="text" name="ans1" value="{{ .Ans1 }}" hidden />
+                <span>{{ .Ans1 }}</span>
+            </button>
+            {{end}}
+            {{ template "red_answer" . }}
+        </form>
+        <form class="w-full h-full">
+            {{ define "blue_answer" }}
+            <button id="ans2" ws-send hx-post="/socket" hx-swap-oob="outerHTML"
+                class="bg-kahootBlue py-9 w-full h-full flex justify-center items-center">
+                <img class="w-10 h-10" src="static/svgs/2.svg" />
+                <input type="text" name="ans2" value="{{ .Ans2 }}" hidden />
+                <span>{{ .Ans2 }}</span>
+            </button>
+            {{end}}
+            {{ template "blue_answer" . }}
+        </form>
+    </div>
+
+    <div class="flex justify-center items-center w-full gap-2">
+        <form class="w-full h-full">
+            {{ define "green_answer" }}
+            <button id="ans3" ws-send hx-post="/socket" hx-swap-oob="outerHTML"
+                class="bg-kahootGreen py-9 w-full h-full flex justify-center items-center">
+                <img class="w-10 h-10" src="static/svgs/3.svg" />
+                <input type="text" name="ans3" value="{{ .Ans3 }}" hidden />
+                <span>{{ .Ans3 }}</span>
+            </button>
+            {{end}}
+            {{ template "green_answer" . }}
+        </form>
+        <form class="w-full h-full">
+            {{ define "yellow_answer" }}
+            <button id="ans4" ws-send hx-post="/socket" hx-swap-oob="outerHTML"
+                class="bg-kahootYellow py-9 w-full h-full flex justify-center items-center">
+                <img class="w-10 h-10" src="static/svgs/4.svg" />
+                <input type="text" name="ans4" value="{{ .Ans4 }}" hidden />
+                <span>{{ .Ans4 }}</span>
+            </button>
+            {{end}}
+            {{ template "yellow_answer" . }}
+        </form>
     </div>
 </div>

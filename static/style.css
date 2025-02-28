@@ -607,6 +607,9 @@
   .w-0 {
     width: calc(var(--spacing) * 0);
   }
+  .w-2 {
+    width: calc(var(--spacing) * 2);
+  }
   .w-4\/5 {
     width: calc(4/5 * 100%);
   }
