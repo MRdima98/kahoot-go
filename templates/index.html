@@ -6,15 +6,13 @@
             <div class="flex justify-center items-center font-bold p-4 bg-blue-200 w-full
                 py-8
                 ">
-                How many eggs in a dozen?
-                How many eggs in a dozen?
-                How many eggs in a dozen?
+                {{ .Current.Quest }}
             </div>
             <div class="flex justify-around items-center w-full">
                 <div hx-ext="debug" class="flex flex-col justify-center items-center">
                     <span hx-ext="ws" ws-connect="/questions">
                         <div id="n_answered" hx-swap-oob="innerHTML">
-                            0
+                            {{ .Answered }}
                         </div>
                     </span>
                     <span>ans</span>
@@ -28,25 +26,21 @@
                 <div class="flex gap-5 w-full justify-around">
                     <div class="bg-kahootRed w-full h-full flex justify-center gap-16 py-8">
                         <img class="w-30" src="static/svgs/1.svg" />
-                        ans1
-                        <!--{question?.answer1}-->
+                        {{ .Current.Ans1 }}
                     </div>
                     <div class="bg-kahootBlue w-full flex justify-center py-8 gap-16">
                         <img class="w-30" src="static/svgs/2.svg" />
-                        ans2
-                        <!--{question?.answer2}-->
+                        {{ .Current.Ans2 }}
                     </div>
                 </div>
                 <div class="flex gap-5 w-full justify-around">
                     <div class="bg-kahootGreen w-full h-full flex justify-center py-8 gap-16">
                         <img class="w-30" src="static/svgs/3.svg" />
-                        ans3
-                        <!--{question?.answer3}-->
+                        {{ .Current.Ans3 }}
                     </div>
                     <div class="bg-kahootYellow w-full flex justify-center py-8 gap-16">
                         <img class="w-30" src="static/svgs/4.svg" />
-                        ans4
-                        <!--{question?.answer4}-->
+                        {{ .Current.Ans4 }}
                     </div>
                 </div>
             </div>

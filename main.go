@@ -44,7 +44,7 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/game", gameHandler)
+	http.HandleFunc("/game", handlers.GameHandler)
 	http.HandleFunc("/player", playerHandler)
 	http.HandleFunc("/socket", handlers.SocketHandler)
 	http.HandleFunc("/questions", handlers.QuestionsHandler)
@@ -68,19 +68,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		Path string
 	}{
 		r.URL.Path,
-	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func gameHandler(w http.ResponseWriter, r *http.Request) {
-	err := tmpl.ExecuteTemplate(w, index, struct {
-		Path     string
-		Answered int
-	}{
-		r.URL.Path,
-		Answered,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
