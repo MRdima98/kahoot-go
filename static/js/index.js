@@ -8,16 +8,4 @@ window.addEventListener("load", function () {
       img.style.width = "1800px";
     }
   }
-
-  document.addEventListener("htmx:oobAfterSwap", function (event) {
-    console.log(event);
-    //if (event.target.id === "UI" || event.target.di === "Menu") {
-    //  return;
-    //}
-
-    const buttons = document.getElementsByTagName("button");
-    Array.from(buttons).forEach((el) => {
-      el.disabled = true;
-    });
-  });
 });

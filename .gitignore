@@ -10,3 +10,4 @@ tmp
 tailwindcss
 bin
 *.rdb
+node_modules
