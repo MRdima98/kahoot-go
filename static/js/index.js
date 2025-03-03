@@ -16,11 +16,10 @@ window.addEventListener("load", function () {
     /** @type {Number} */
     let delta = Date.now() - start;
     /** @type {Number} */
-    let countDown = 30;
+    let countDown = 5;
     countDown -= Math.floor(delta / 1000);
 
     if (countDown <= 0) {
-      // when all is done, you shall make a quick post to the server
       return;
     }
     timer.innerHTML = countDown;

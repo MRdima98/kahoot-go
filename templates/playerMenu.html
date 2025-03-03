@@ -11,6 +11,20 @@
             </button>
         </form>
     </div>
+    <form hidden>
+        <button id="player" ws-send hx-post="/questions">
+            <input type="text" name="player" value="player" />
+        </button>
+    </form>
+
+    <script>
+        document.addEventListener("htmx:wsOpen", function () {
+            /** @type {HTMLButtonElement} */
+            const player = document.getElementById("player");
+            player.click();
+            console.log("gotem")
+        });
+    </script>
 </div>
 
 {{ template "footer.html" .}}

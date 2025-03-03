@@ -607,6 +607,9 @@
   .w-4\/5 {
     width: calc(4/5 * 100%);
   }
+  .w-8 {
+    width: calc(var(--spacing) * 8);
+  }
   .w-10 {
     width: calc(var(--spacing) * 10);
   }
@@ -661,6 +664,9 @@
   .bg-blue-200 {
     background-color: var(--color-blue-200);
   }
+  .bg-blue-400 {
+    background-color: var(--color-blue-400);
+  }
   .bg-blue-800 {
     background-color: var(--color-blue-800);
   }
@@ -685,6 +691,9 @@
   .bg-red-500 {
     background-color: var(--color-red-500);
   }
+  .bg-yellow-300 {
+    background-color: var(--color-yellow-300);
+  }
   .p-4 {
     padding: calc(var(--spacing) * 4);
   }
@@ -696,6 +705,10 @@
   }
   .py-9 {
     padding-block: calc(var(--spacing) * 9);
+  }
+  .text-5xl {
+    font-size: var(--text-5xl);
+    line-height: var(--tw-leading, var(--text-5xl--line-height));
   }
   .text-9xl {
     font-size: var(--text-9xl);

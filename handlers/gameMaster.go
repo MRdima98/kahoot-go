@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -41,10 +42,31 @@ func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	answered = conn
+	master = conn
+
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		var result map[string]any
+		err = json.Unmarshal(message, &result)
+		if err != nil {
+			fmt.Println("Error unmarshaling JSON in for loop get:", err)
+			return
+		}
+
+		fmt.Println(result)
+		if result["master"] != nil {
+			fmt.Println("master:", result["master"])
+		}
+	}
 }
 
 func GameHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\nGame master in the house!")
 	rdb := RedisClient()
 
 	var questions []Question

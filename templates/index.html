@@ -15,6 +15,11 @@
                         <div id="n_answered" hx-swap-oob="innerHTML">
                             {{ .Answered }}
                         </div>
+                        <form hidden>
+                            <button id="master" ws-send hx-post="/questions">
+                                <input type="text" name="master" value="master" />
+                            </button>
+                        </form>
                     </span>
                     <span>ans</span>
                 </div>

@@ -46,7 +46,7 @@ func main() {
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/game", handlers.GameHandler)
 	http.HandleFunc("/player", playerHandler)
-	http.HandleFunc("/socket", handlers.SocketHandler)
+	http.HandleFunc("/socket", handlers.PlayerHandler)
 	http.HandleFunc("/questions", handlers.QuestionsHandler)
 
 	srv := &http.Server{Addr: ":8080"}
@@ -70,7 +70,8 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path,
 	})
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("asdfa")
+		// http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 

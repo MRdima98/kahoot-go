@@ -1,5 +1,5 @@
 function disableButtons() {
-  document.addEventListener("htmx:oobAfterSwap", function (event) {
+  document.addEventListener("htmx:oobAfterSwap", function () {
     /**
      * @type {HTMLButtonElement[]}
      */
@@ -8,5 +8,12 @@ function disableButtons() {
       console.log("loop for disables");
       el.disabled = true;
     });
+  });
+
+  document.addEventListener("htmx:wsOpen", function () {
+    /** @type {HTMLButtonElement} */
+    const player = document.getElementById("player");
+    console.log("player");
+    player.click();
   });
 }
