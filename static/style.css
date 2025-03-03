@@ -589,12 +589,6 @@
   .h-4\/5 {
     height: calc(4/5 * 100%);
   }
-  .h-5 {
-    height: calc(var(--spacing) * 5);
-  }
-  .h-6 {
-    height: calc(var(--spacing) * 6);
-  }
   .h-10 {
     height: calc(var(--spacing) * 10);
   }
@@ -609,9 +603,6 @@
   }
   .h-screen {
     height: 100vh;
-  }
-  .w-2 {
-    width: calc(var(--spacing) * 2);
   }
   .w-4\/5 {
     width: calc(4/5 * 100%);
