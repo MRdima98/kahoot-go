@@ -523,8 +523,14 @@
   .static {
     position: static;
   }
+  .z-4 {
+    z-index: 4;
+  }
   .m-2 {
     margin: calc(var(--spacing) * 2);
+  }
+  .m-6 {
+    margin: calc(var(--spacing) * 6);
   }
   .m-7 {
     margin: calc(var(--spacing) * 7);
@@ -591,6 +597,9 @@
   }
   .table {
     display: table;
+  }
+  .h-2 {
+    height: calc(var(--spacing) * 2);
   }
   .h-4\/5 {
     height: calc(4/5 * 100%);

@@ -1,8 +1,9 @@
 {{ template "head.html" .}}
 
-<script src="./static/js/index.js"></script>
-<div class="w-screen h-screen flex justify-center items-center">
-    <div class="bg-gray-200 p-6 w-4/5 h-4/5 text-9xl">
+<div hx-ext="ws" ws-connect="/questions" class="w-screen h-screen flex justify-center items-center">
+    {{ define "body"}}
+    <div id="body" hx-swap-oob="innerHTML" class="bg-gray-200 p-6 w-4/5 h-4/5 text-9xl">
+        <script src="./static/js/index.js"></script>
         <div class="flex flex-col justify-between items-center w-full h-full">
             <div class="flex justify-center items-center font-bold p-4 bg-blue-200 w-full
                 py-8
@@ -11,7 +12,7 @@
             </div>
             <div class="flex justify-around items-center w-full">
                 <div hx-ext="debug" class="flex flex-col justify-center items-center">
-                    <span hx-ext="ws" ws-connect="/questions">
+                    <span>
                         <div id="n_answered" hx-swap-oob="innerHTML">
                             {{ .Answered }}
                         </div>
@@ -52,6 +53,8 @@
             </div>
         </div>
     </div>
+    {{ end }}
+    {{ template "body" . }}
 </div>
 
 {{ template "footer.html" .}}
