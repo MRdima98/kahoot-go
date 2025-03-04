@@ -36,8 +36,10 @@ type Question struct {
 }
 
 func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\nGame master in the house!")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		fmt.Println(err)
 		log.Println(err)
 		return
 	}
@@ -47,7 +49,7 @@ func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
-			log.Println(err)
+			fmt.Println(err)
 			return
 		}
 
@@ -59,14 +61,14 @@ func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		fmt.Println(result)
-		if result["master"] != nil {
-			fmt.Println("master:", result["master"])
+
+		if result["timeout"] != nil {
+			fmt.Println("We did timeout")
 		}
 	}
 }
 
 func GameHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("\nGame master in the house!")
 	rdb := RedisClient()
 
 	var questions []Question
@@ -102,6 +104,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
+		fmt.Println("Err")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	rdb.Close()

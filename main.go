@@ -43,7 +43,7 @@ func main() {
 
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
-	http.HandleFunc("/", homeHandler)
+	// http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/game", handlers.GameHandler)
 	http.HandleFunc("/player", playerHandler)
 	http.HandleFunc("/socket", handlers.PlayerHandler)
@@ -70,7 +70,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path,
 	})
 	if err != nil {
-		log.Println("asdfa")
+		// log.Println("asdfa")
 		// http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

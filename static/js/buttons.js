@@ -10,10 +10,10 @@ function disableButtons() {
     });
   });
 
-  document.addEventListener("htmx:wsOpen", function () {
-    /** @type {HTMLButtonElement} */
-    const player = document.getElementById("player");
-    console.log("player");
-    player.click();
-  });
+  //document.addEventListener("htmx:wsOpen", function () {
+  //  /** @type {HTMLButtonElement} */
+  //  const player = document.getElementById("player");
+  //  console.log("player");
+  //  player.click();
+  //});
 }

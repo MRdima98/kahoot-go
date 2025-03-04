@@ -10,18 +10,22 @@ window.addEventListener("load", function () {
 
   /** @type {HTMLDivElement} */
   const timer = document.getElementById("timer");
+  /** @type {HTMLButtonElement} */
+  const timeout = document.getElementById("timeout");
 
   var start = Date.now();
-  setInterval(function () {
+  id = setInterval(function () {
     /** @type {Number} */
     let delta = Date.now() - start;
     /** @type {Number} */
     let countDown = 5;
     countDown -= Math.floor(delta / 1000);
 
-    if (countDown <= 0) {
-      return;
-    }
     timer.innerHTML = countDown;
+
+    if (countDown <= 0) {
+      timeout.click();
+      clearInterval(id);
+    }
   }, 1000);
 });
