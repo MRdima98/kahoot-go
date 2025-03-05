@@ -3,7 +3,7 @@
 <div hx-ext="ws" ws-connect="/questions" class="w-screen h-screen flex justify-center items-center">
     {{ define "body"}}
     <div id="body" hx-swap-oob="innerHTML" class="bg-gray-200 p-6 w-4/5 h-4/5 text-9xl">
-        <script src="./static/js/index.js"></script>
+        <!--<script src="./static/js/index.js"></script>-->
         <div class="flex flex-col justify-between items-center w-full h-full">
             <div class="flex justify-center items-center font-bold p-4 bg-blue-200 w-full
                 py-8
@@ -11,7 +11,7 @@
                 {{ .Current.Quest }}
             </div>
             <div class="flex justify-around items-center w-full">
-                <div hx-ext="debug" class="flex flex-col justify-center items-center">
+                <div class="flex flex-col justify-center items-center">
                     <span>
                         <div id="n_answered" hx-swap-oob="innerHTML">
                             {{ .Answered }}
@@ -24,7 +24,7 @@
                     </span>
                     <span>ans</span>
                 </div>
-                <img id="test" class="p-4 w-160" src="static/pictures/hor" />
+                <img id="picture" onload="fixDim()" class="p-4 w-160" src="static/pictures/hor" />
                 <div id="timer" class="w-64 h-64 bg-red-500 rounded-full flex justify-center items-center ">
                     30
                 </div>

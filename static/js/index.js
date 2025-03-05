@@ -1,13 +1,23 @@
 window.addEventListener("load", function () {
-  /** @type {HTMLImageElement} */
-  const img = document.getElementById("test");
+  triggerTimer();
+  observeMutation();
+});
+
+//window.addEventListener("htmx:afterProcessNode", function () {
+//  triggerTimer();
+//});
+
+function fixDim() {
+  const img = document.getElementById("picture");
 
   if (img.naturalWidth < img.naturalHeight) {
     img.style.width = "600px";
   } else {
     img.style.width = "1800px";
   }
+}
 
+function triggerTimer() {
   /** @type {HTMLDivElement} */
   const timer = document.getElementById("timer");
   /** @type {HTMLButtonElement} */
@@ -28,4 +38,23 @@ window.addEventListener("load", function () {
       clearInterval(id);
     }
   }, 1000);
-});
+}
+
+function observeMutation() {
+  /** @type {HTMLDivElement} */
+  let targetNode = document.body;
+  const config = { childList: true, subtree: true };
+
+  const callback = () => {
+    /** @type {HTMLDivElement} */
+    let timer = document.getElementById("timer");
+
+    if (timer != null && Number(timer.innerHTML) === 30) {
+      console.log("gotem");
+      triggerTimer();
+    }
+  };
+
+  const observer = new MutationObserver(callback);
+  observer.observe(targetNode, config);
+}
