@@ -70,8 +70,6 @@ func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fmt.Println(result)
-
 		if result["timeout"] != nil {
 			leadBoard(rdb)
 		}
@@ -189,4 +187,26 @@ func leadBoard(rdb *redis.Client) {
 		log.Println(err)
 		return
 	}
+
+	tmpl, err = template.ParseFiles(playerControlsPath)
+	if err != nil {
+		log.Println(err)
+	}
+
+	tpl.Reset()
+	err = tmpl.Execute(&tpl, readQuestion(rdb))
+	if err != nil {
+		log.Printf("template execution: %s", err)
+	}
+
+	// fmt.Println(tpl.String())
+
+	for _, conn := range lobby {
+		fmt.Println("am I even loopi?")
+		if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
 }

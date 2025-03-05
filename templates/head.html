@@ -11,7 +11,10 @@
         crossorigin="anonymous"></script>
     <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/ws.js"></script>
     <script src="https://unpkg.com/htmx-ext-debug@2.0.0/debug.js"></script>
+
+    {{if eq .Path "/game"}}
     <script src="./static/js/index.js"></script>
+    {{end}}
 </head>
 
 <body class="bg-gruvbox h-screen">
