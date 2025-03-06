@@ -1,11 +1,9 @@
+/** @type {Number} */
+let timer_id;
 window.addEventListener("load", function () {
   triggerTimer();
   observeMutation();
 });
-
-//window.addEventListener("htmx:afterProcessNode", function () {
-//  triggerTimer();
-//});
 
 function fixDim() {
   const img = document.getElementById("picture");
@@ -22,20 +20,25 @@ function triggerTimer() {
   const timer = document.getElementById("timer");
   /** @type {HTMLButtonElement} */
   const timeout = document.getElementById("timeout");
+  console.log(timer_id);
+  if (timer_id != null) {
+    console.log("cleared");
+    clearInterval(timer_id);
+  }
 
   var start = Date.now();
-  id = setInterval(function () {
+  timer_id = setInterval(function () {
     /** @type {Number} */
     let delta = Date.now() - start;
     /** @type {Number} */
-    let countDown = 5;
+    let countDown = 10;
     countDown -= Math.floor(delta / 1000);
 
     timer.innerHTML = countDown;
 
     if (countDown <= 0) {
       timeout.click();
-      clearInterval(id);
+      clearInterval(timer_id);
     }
   }, 1000);
 }
@@ -50,7 +53,6 @@ function observeMutation() {
     let timer = document.getElementById("timer");
 
     if (timer != null && Number(timer.innerHTML) === 30) {
-      console.log("gotem");
       triggerTimer();
     }
   };

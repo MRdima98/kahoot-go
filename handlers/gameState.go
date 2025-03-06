@@ -16,7 +16,7 @@ import (
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	WriteBufferSize: 8192,
 }
 
 var ctx = context.Background()
@@ -36,8 +36,6 @@ var curr_question = 0
 func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("\n\nOpened PLAYER connection!")
 	conn, err := upgrader.Upgrade(w, r, nil)
-	lobby = append(lobby, conn)
-
 	if err != nil {
 		log.Println(err)
 		return
@@ -52,6 +50,7 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		savePlayerInfo(curr_player, rdb, disconnected)
+		delete(lobby, curr_player.Name)
 
 		rdb.Close()
 		return nil
@@ -100,6 +99,9 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 				Score:  0,
 			}
 			savePlayerInfo(curr_player, rdb, connected)
+			lobby[curr_player.Name] = conn
+
+			fmt.Println("Curr lobby: ", len(lobby))
 
 			tmpl, err = template.ParseFiles(playerControlsPath)
 			if err != nil {

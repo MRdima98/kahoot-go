@@ -38,7 +38,7 @@ var colors = map[string]string{
 	"yellow_answer": "bg-kahootYellow",
 }
 
-var lobby []*websocket.Conn
+var lobby = make(map[string]*websocket.Conn)
 
 func savePlayerInfo(player player, rdb *redis.Client, status string) {
 	data, err := rdb.Get(ctx, player.Name).Result()
@@ -123,14 +123,14 @@ func whichAnswer(answer string, rdb *redis.Client, tmpl *template.Template, conn
 	%d
 	</div>
 	`
-	html = fmt.Sprintf(html, saveNAnswered(rdb))
+	answer_count := saveNAnswered(rdb)
+	html = fmt.Sprintf(html, answer_count)
 
 	if master == nil {
 		fmt.Println("There is no open game")
 		return
 	}
 
-	fmt.Println(html)
 	if err := master.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
 		fmt.Println("Can't sign that a player wrote a message", err)
 		return
@@ -147,5 +147,9 @@ func whichAnswer(answer string, rdb *redis.Client, tmpl *template.Template, conn
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(gray)); err != nil {
 		log.Println(err)
 		return
+	}
+
+	if answer_count == len(lobby) {
+		leadBoard(rdb)
 	}
 }
