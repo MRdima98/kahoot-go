@@ -20,9 +20,7 @@ function triggerTimer() {
   const timer = document.getElementById("timer");
   /** @type {HTMLButtonElement} */
   const timeout = document.getElementById("timeout");
-  console.log(timer_id);
   if (timer_id != null) {
-    console.log("cleared");
     clearInterval(timer_id);
   }
 
@@ -31,7 +29,7 @@ function triggerTimer() {
     /** @type {Number} */
     let delta = Date.now() - start;
     /** @type {Number} */
-    let countDown = 10;
+    let countDown = 3;
     countDown -= Math.floor(delta / 1000);
 
     timer.innerHTML = countDown;

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -44,45 +43,43 @@ type Question struct {
 }
 
 func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("\nGame master in the house!")
+	log.Println("\nGame master in the house!")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println(err)
 		log.Println(err)
 		return
 	}
 
-	rdb := RedisClient()
-
+	redis := RedisClient()
 	master = conn
 
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			return
 		}
 
 		var result map[string]any
 		err = json.Unmarshal(message, &result)
 		if err != nil {
-			fmt.Println("Error unmarshaling JSON in for loop get:", err)
+			log.Println("Error unmarshaling JSON in for loop get:", err)
 			return
 		}
 
 		if result["timeout"] != nil {
-			leadBoard(rdb)
+			leadBoard(redis)
 		}
 	}
 }
 
 func GameHandler(w http.ResponseWriter, r *http.Request) {
-	rdb := RedisClient()
+	redis := RedisClient()
 	URL = r.URL.Path
 
 	var questions []Question
 
-	data, err := rdb.Get(context.Background(), Questions).Result()
+	data, err := redis.Get(context.Background(), Questions).Result()
 	if err != nil {
 		log.Println("We can't find them")
 	}
@@ -92,7 +89,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Can't unmarshal them data")
 	}
 
-	data, err = rdb.Get(context.Background(), "n_answered").Result()
+	data, err = redis.Get(context.Background(), "n_answered").Result()
 	if err != nil {
 		log.Println("We can't count")
 	}
@@ -101,6 +98,15 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Converting n_answered: ", err)
 	}
+
+	redis = RedisClient()
+
+	err = redis.Set(context.Background(), curr_question_key, 0, 0).Err()
+	if err != nil {
+		log.Println("Can't check which quest", err)
+	}
+
+	curr_question := 0
 
 	err = gameTmpl.ExecuteTemplate(w, index, struct {
 		Path     string
@@ -113,13 +119,13 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		fmt.Println("Err")
+		log.Println("Err")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	rdb.Close()
+	redis.Close()
 }
 
-func leadBoard(rdb *redis.Client) {
+func leadBoard(redis *redis.Client) {
 	tmpl, err := template.ParseFiles(leaderBoardPath)
 	if err != nil {
 		log.Println(err)
@@ -136,17 +142,16 @@ func leadBoard(rdb *redis.Client) {
 		return
 	}
 
-	err = rdb.Set(context.Background(), "n_answered", 0, 0).Err()
+	err = redis.Set(context.Background(), "n_answered", 0, 0).Err()
 	if err != nil {
 		panic("Can't write questions")
 	}
 
 	time.Sleep(5 * time.Second)
-	fmt.Println("Slept 5")
 
 	var questions []Question
 
-	data, err := rdb.Get(context.Background(), Questions).Result()
+	data, err := redis.Get(context.Background(), Questions).Result()
 	if err != nil {
 		log.Println("We can't find them")
 	}
@@ -156,7 +161,7 @@ func leadBoard(rdb *redis.Client) {
 		log.Println("Can't unmarshal them data")
 	}
 
-	data, err = rdb.Get(context.Background(), "n_answered").Result()
+	data, err = redis.Get(context.Background(), "n_answered").Result()
 	if err != nil {
 		log.Println("We can't count")
 	}
@@ -166,7 +171,25 @@ func leadBoard(rdb *redis.Client) {
 		log.Println("Converting n_answered: ", err)
 	}
 
-	fmt.Println("Loaded data")
+	curr_question_string, err := redis.Get(context.Background(), curr_question_key).Result()
+	if err != nil {
+		log.Println("We can't find them")
+	}
+
+	curr_question, err := strconv.Atoi(curr_question_string)
+	if err != nil {
+		log.Println("Converting n_answered: ", err)
+	}
+
+	curr_question++
+	err = redis.Set(context.Background(), curr_question_key, curr_question, 0).Err()
+	if err != nil {
+		log.Println("Can't check which quest", err)
+	}
+
+	if curr_question == len(questions) {
+		return
+	}
 
 	err = gameTmpl.ExecuteTemplate(&tpl, "body", struct {
 		Path     string
@@ -181,8 +204,6 @@ func leadBoard(rdb *redis.Client) {
 		log.Printf("template execution: %s", err)
 	}
 
-	fmt.Println("Exe templ")
-
 	if err := master.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
 		log.Println(err)
 		return
@@ -194,15 +215,12 @@ func leadBoard(rdb *redis.Client) {
 	}
 
 	tpl.Reset()
-	err = tmpl.Execute(&tpl, readQuestion(rdb))
+	err = tmpl.Execute(&tpl, readQuestion(redis))
 	if err != nil {
 		log.Printf("template execution: %s", err)
 	}
 
-	// fmt.Println(tpl.String())
-
 	for _, conn := range lobby {
-		fmt.Println("am I even loopi?")
 		if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
 			log.Println(err)
 			return

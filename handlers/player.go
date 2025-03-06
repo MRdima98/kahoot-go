@@ -40,15 +40,15 @@ var colors = map[string]string{
 
 var lobby = make(map[string]*websocket.Conn)
 
-func savePlayerInfo(player player, rdb *redis.Client, status string) {
-	data, err := rdb.Get(ctx, player.Name).Result()
+func savePlayerInfo(player player, redis *redis.Client, status string) {
+	data, err := redis.Get(ctx, player.Name).Result()
 	if err != nil {
 		playerJSON, err := json.Marshal(player)
 		if err != nil {
 			log.Println("Marshal err: ", err)
 		}
 
-		err = rdb.Set(ctx, player.Name, playerJSON, doesnt_expire).Err()
+		err = redis.Set(ctx, player.Name, playerJSON, doesnt_expire).Err()
 		if err != nil {
 			log.Println(err)
 		}
@@ -70,7 +70,7 @@ func savePlayerInfo(player player, rdb *redis.Client, status string) {
 		return
 	}
 
-	err = rdb.Set(ctx, player.Name, playerJSON, doesnt_expire).Err()
+	err = redis.Set(ctx, player.Name, playerJSON, doesnt_expire).Err()
 	if err != nil {
 		log.Println("Updating player status:", err)
 		return
@@ -79,9 +79,9 @@ func savePlayerInfo(player player, rdb *redis.Client, status string) {
 	log.Printf("Player %s %s", player.Name, player.Status)
 }
 
-func saveNAnswered(rdb *redis.Client) int {
+func saveNAnswered(redis *redis.Client) int {
 	n_answered := "n_answered"
-	tmp, err := rdb.Get(ctx, n_answered).Result()
+	tmp, err := redis.Get(ctx, n_answered).Result()
 	if err != nil {
 		log.Println("Reading n_answered: ", err)
 	}
@@ -93,7 +93,7 @@ func saveNAnswered(rdb *redis.Client) int {
 
 	count++
 
-	err = rdb.Set(ctx, n_answered, count, 0).Err()
+	err = redis.Set(ctx, n_answered, count, 0).Err()
 	if err != nil {
 		log.Println("Writing n_answered: ", err)
 	}
@@ -101,8 +101,8 @@ func saveNAnswered(rdb *redis.Client) int {
 	return count
 }
 
-func readQuestion(rdb *redis.Client) Question {
-	tmp, err := rdb.Get(ctx, Questions).Result()
+func readQuestion(redis *redis.Client) Question {
+	tmp, err := redis.Get(ctx, Questions).Result()
 	if err != nil {
 		log.Println("Reading questions", err)
 	}
@@ -114,30 +114,40 @@ func readQuestion(rdb *redis.Client) Question {
 		log.Println("Unmarshal err: ", err)
 	}
 
+	curr_question_string, err := redis.Get(ctx, curr_question_key).Result()
+	if err != nil {
+		log.Println("We can't find them")
+	}
+
+	curr_question, err := strconv.Atoi(curr_question_string)
+	if err != nil {
+		log.Println("Converting n_answered: ", err)
+	}
+
 	return options[curr_question]
 }
 
-func whichAnswer(answer string, rdb *redis.Client, tmpl *template.Template, conn *websocket.Conn) {
+func whichAnswer(answer string, redis *redis.Client, tmpl *template.Template, conn *websocket.Conn) {
 	html := `
 	<div id="n_answered" hx-swap-oob="innerHTML">
 	%d
 	</div>
 	`
-	answer_count := saveNAnswered(rdb)
+	answer_count := saveNAnswered(redis)
 	html = fmt.Sprintf(html, answer_count)
 
 	if master == nil {
-		fmt.Println("There is no open game")
+		log.Println("There is no open game")
 		return
 	}
 
 	if err := master.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
-		fmt.Println("Can't sign that a player wrote a message", err)
+		log.Println("Can't sign that a player wrote a message", err)
 		return
 	}
 
 	var ans_button bytes.Buffer
-	err := tmpl.ExecuteTemplate(&ans_button, answer, readQuestion(rdb))
+	err := tmpl.ExecuteTemplate(&ans_button, answer, readQuestion(redis))
 	if err != nil {
 		log.Println(err)
 	}
@@ -150,6 +160,6 @@ func whichAnswer(answer string, rdb *redis.Client, tmpl *template.Template, conn
 	}
 
 	if answer_count == len(lobby) {
-		leadBoard(rdb)
+		leadBoard(redis)
 	}
 }

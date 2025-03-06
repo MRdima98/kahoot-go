@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"text/template"
@@ -27,14 +26,14 @@ const (
 	disconnected       = "disconnected"
 	no_answer          = ""
 	Questions          = "questions"
+	curr_question_key  = "curr_question"
 )
 
 var master *websocket.Conn
-var curr_question = 0
 
 // TODO - unify under 1 socket
 func PlayerHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("\n\nOpened PLAYER connection!")
+	log.Println("\n\nOpened PLAYER connection!")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -67,12 +66,12 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 		var result map[string]any
 		err = json.Unmarshal(p, &result)
 		if err != nil {
-			fmt.Println("Error unmarshaling JSON in for loop get:", err)
+			log.Println("Error unmarshaling JSON in for loop get:", err)
 			return
 		}
 
 		if result["player"] != nil {
-			fmt.Println("This is a player")
+			log.Println("This is a player")
 		}
 
 		if result["ans1"] != nil {
@@ -100,8 +99,6 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			savePlayerInfo(curr_player, rdb, connected)
 			lobby[curr_player.Name] = conn
-
-			fmt.Println("Curr lobby: ", len(lobby))
 
 			tmpl, err = template.ParseFiles(playerControlsPath)
 			if err != nil {
