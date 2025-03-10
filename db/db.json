@@ -6,7 +6,7 @@
         "answer3": "Space ship",
         "answer4": "Bike",
         "correct": "Car",
-        "path": "/pictures/1.jpg"
+        "path": "/static/pictures/1.jpg"
     },
     {
         "question": "How many fingers a human has?",
@@ -15,7 +15,7 @@
         "answer3": "10",
         "answer4": "42",
         "correct": "10",
-        "path": "/pictures/2.jpg"
+        "path": "/static/pictures/2.jpg"
     },
     {
         "question": "Who's Ken?",
@@ -24,6 +24,6 @@
         "answer3": "My hero",
         "answer4": "A legend",
         "correct": "Barbie's boyfriend",
-        "path": "/pictures/3.jpg"
+        "path": "/static/pictures/3.jpg"
     }
 ]
