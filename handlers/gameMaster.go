@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -32,7 +33,7 @@ var gameTmpl = template.Must(
 	),
 )
 
-type Question struct {
+type question struct {
 	Quest   string `json:"question"`
 	Ans1    string `json:"answer1"`
 	Ans2    string `json:"answer2"`
@@ -77,7 +78,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	redis := RedisClient()
 	URL = r.URL.Path
 
-	var questions []Question
+	var questions []question
 
 	data, err := redis.Get(context.Background(), Questions).Result()
 	if err != nil {
@@ -111,7 +112,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	err = gameTmpl.ExecuteTemplate(w, index, struct {
 		Path     string
 		Answered int
-		Current  Question
+		Current  question
 	}{
 		r.URL.Path,
 		Answered,
@@ -132,7 +133,8 @@ func leadBoard(redis *redis.Client) {
 	}
 
 	var tpl bytes.Buffer
-	err = tmpl.Execute(&tpl, nil)
+	fmt.Println("clien lobby", client_lobby)
+	err = tmpl.Execute(&tpl, client_lobby)
 	if err != nil {
 		log.Printf("template execution: %s", err)
 	}
@@ -149,7 +151,7 @@ func leadBoard(redis *redis.Client) {
 
 	time.Sleep(5 * time.Second)
 
-	var questions []Question
+	var questions []question
 
 	data, err := redis.Get(context.Background(), Questions).Result()
 	if err != nil {
@@ -194,7 +196,7 @@ func leadBoard(redis *redis.Client) {
 	err = gameTmpl.ExecuteTemplate(&tpl, "body", struct {
 		Path     string
 		Answered int
-		Current  Question
+		Current  question
 	}{
 		URL,
 		Answered,
@@ -220,7 +222,7 @@ func leadBoard(redis *redis.Client) {
 		log.Printf("template execution: %s", err)
 	}
 
-	for _, conn := range lobby {
+	for _, conn := range server_lobby {
 		if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
 			log.Println(err)
 			return

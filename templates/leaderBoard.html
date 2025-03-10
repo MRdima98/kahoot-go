@@ -4,11 +4,11 @@
             <div class="text-5xl font-bold">
                 Leader board
             </div>
-            <!--{ scoreboard?.map((player) => (-->
-            <!--<div key={player.nick_name} class="bg-yellow-300 w-full">-->
-            <!--    {player.nick_name} {player.score}-->
-            <!--</div>-->
-            <!--))}-->
+            {{ range .}}
+            <div class="bg-yellow-300 w-full">
+                {{ .Name }} {{ .Score}}
+            </div>
+            {{ end}}
         </div>
     </div>
 </div>

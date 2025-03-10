@@ -24,7 +24,7 @@ type player struct {
 	Score  int    `json:"score"`
 }
 
-type options struct {
+type player_options struct {
 	Ans1 string `json:"ans1"`
 	Ans2 string `json:"ans2"`
 	Ans3 string `json:"ans3"`
@@ -38,7 +38,8 @@ var colors = map[string]string{
 	"yellow_answer": "bg-kahootYellow",
 }
 
-var lobby = make(map[string]*websocket.Conn)
+var server_lobby = make(map[string]*websocket.Conn)
+var client_lobby []player
 
 func savePlayerInfo(player player, redis *redis.Client, status string) {
 	data, err := redis.Get(ctx, player.Name).Result()
@@ -101,13 +102,13 @@ func saveNAnswered(redis *redis.Client) int {
 	return count
 }
 
-func readQuestion(redis *redis.Client) Question {
+func readQuestion(redis *redis.Client) question {
 	tmp, err := redis.Get(ctx, Questions).Result()
 	if err != nil {
 		log.Println("Reading questions", err)
 	}
 
-	var options []Question
+	var options []question
 
 	err = json.Unmarshal([]byte(tmp), &options)
 	if err != nil {
@@ -159,7 +160,7 @@ func whichAnswer(answer string, redis *redis.Client, tmpl *template.Template, co
 		return
 	}
 
-	if answer_count == len(lobby) {
+	if answer_count == len(server_lobby) {
 		leadBoard(redis)
 	}
 }

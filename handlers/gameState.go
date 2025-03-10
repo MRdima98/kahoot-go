@@ -49,7 +49,7 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		savePlayerInfo(curr_player, rdb, disconnected)
-		delete(lobby, curr_player.Name)
+		delete(server_lobby, curr_player.Name)
 
 		rdb.Close()
 		return nil
@@ -98,7 +98,8 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 				Score:  0,
 			}
 			savePlayerInfo(curr_player, rdb, connected)
-			lobby[curr_player.Name] = conn
+			server_lobby[curr_player.Name] = conn
+			client_lobby = append(client_lobby, curr_player)
 
 			tmpl, err = template.ParseFiles(playerControlsPath)
 			if err != nil {
