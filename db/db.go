@@ -37,19 +37,4 @@ func LoadQuestions() {
 	if err != nil {
 		panic("Can't write questions")
 	}
-
-	// dat, err := rdb.Get(context.Background(), "questions").Result()
-	// if err != nil {
-	// 	panic("read")
-	// }
-	//
-	// var quest map[string]Question
-	// err = json.Unmarshal([]byte(dat), &quest)
-	// if err != nil {
-	// 	panic("unmarshal")
-	// }
-	//
-	// for key, el := range quest {
-	// 	fmt.Println(key, el)
-	// }
 }

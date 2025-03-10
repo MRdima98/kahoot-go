@@ -27,11 +27,12 @@ const (
 	no_answer          = ""
 	Questions          = "questions"
 	curr_question_key  = "curr_question"
+	base_score         = 0
+	right_answer       = 100
 )
 
 var master *websocket.Conn
 
-// TODO - unify under 1 socket
 func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("\n\nOpened PLAYER connection!")
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -40,11 +41,11 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var curr_player player
+	var curr_player Player
 	rdb := RedisClient()
 
 	conn.SetCloseHandler(func(code int, text string) error {
-		if curr_player == (player{}) {
+		if curr_player == (Player{}) {
 			return errors.New("No player on this connection...somehow")
 		}
 
@@ -75,27 +76,27 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if result["ans1"] != nil {
-			whichAnswer("red_answer", rdb, tmpl, conn)
+			whichAnswer("red_answer", rdb, tmpl, conn, result["ans1"].(string), curr_player)
 		}
 
 		if result["ans2"] != nil {
-			whichAnswer("blue_answer", rdb, tmpl, conn)
+			whichAnswer("blue_answer", rdb, tmpl, conn, result["ans2"].(string), curr_player)
 		}
 
 		if result["ans3"] != nil {
-			whichAnswer("green_answer", rdb, tmpl, conn)
+			whichAnswer("green_answer", rdb, tmpl, conn, result["ans3"].(string), curr_player)
 		}
 
 		if result["ans4"] != nil {
-			whichAnswer("yellow_answer", rdb, tmpl, conn)
+			whichAnswer("yellow_answer", rdb, tmpl, conn, result["ans4"].(string), curr_player)
 		}
 
 		if result["name"] != nil {
-			curr_player = player{
+			curr_player = Player{
 				Name:   result["name"].(string),
 				Status: connected,
 				Answer: no_answer,
-				Score:  0,
+				Score:  base_score,
 			}
 			savePlayerInfo(curr_player, rdb, connected)
 			server_lobby[curr_player.Name] = conn

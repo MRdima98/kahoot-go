@@ -19,12 +19,12 @@ var Answered = 0
 var URL string
 
 const (
-	index           = "index.html"
-	leaderBoard     = "leaderBoard.html"
-	leaderBoardPath = "templates/leaderBoard.html"
-	indexPath       = "templates/index.html"
-	headPath        = "templates/head.html"
-	footerPath      = "templates/footer.html"
+	index               = "index.html"
+	leaderBoardTemplate = "leaderBoard.html"
+	leaderBoardPath     = "templates/leaderBoard.html"
+	indexPath           = "templates/index.html"
+	headPath            = "templates/head.html"
+	footerPath          = "templates/footer.html"
 )
 
 var gameTmpl = template.Must(
@@ -69,7 +69,7 @@ func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if result["timeout"] != nil {
-			leadBoard(redis)
+			LeaderBoard(redis)
 		}
 	}
 }
@@ -126,14 +126,15 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	redis.Close()
 }
 
-func leadBoard(redis *redis.Client) {
+func LeaderBoard(redis *redis.Client) {
 	tmpl, err := template.ParseFiles(leaderBoardPath)
 	if err != nil {
 		log.Println(err)
 	}
 
+	refresh_lobby(redis)
+	fmt.Println("Lobby: ", client_lobby)
 	var tpl bytes.Buffer
-	fmt.Println("clien lobby", client_lobby)
 	err = tmpl.Execute(&tpl, client_lobby)
 	if err != nil {
 		log.Printf("template execution: %s", err)
@@ -229,4 +230,22 @@ func leadBoard(redis *redis.Client) {
 		}
 	}
 
+}
+
+func refresh_lobby(redis *redis.Client) {
+	for i, pl := range client_lobby {
+		var player Player
+		data, err := redis.Get(ctx, pl.Name).Result()
+		if err != nil {
+			log.Println("Can't read")
+		}
+
+		err = json.Unmarshal([]byte(data), &player)
+		if err != nil {
+			log.Println("UNmarshal err: ", err)
+			return
+		}
+
+		client_lobby[i].Score = player.Score
+	}
 }

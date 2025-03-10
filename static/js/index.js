@@ -29,7 +29,7 @@ function triggerTimer() {
     /** @type {Number} */
     let delta = Date.now() - start;
     /** @type {Number} */
-    let countDown = 3;
+    let countDown = 60;
     countDown -= Math.floor(delta / 1000);
 
     timer.innerHTML = countDown;

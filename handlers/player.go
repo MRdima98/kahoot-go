@@ -17,7 +17,7 @@ const (
 	doesnt_expire = 0
 )
 
-type player struct {
+type Player struct {
 	Name   string `json:"name"`
 	Status string `json:"status"`
 	Answer string `json:"answer"`
@@ -39,9 +39,9 @@ var colors = map[string]string{
 }
 
 var server_lobby = make(map[string]*websocket.Conn)
-var client_lobby []player
+var client_lobby []Player
 
-func savePlayerInfo(player player, redis *redis.Client, status string) {
+func savePlayerInfo(player Player, redis *redis.Client, status string) {
 	data, err := redis.Get(ctx, player.Name).Result()
 	if err != nil {
 		playerJSON, err := json.Marshal(player)
@@ -57,13 +57,15 @@ func savePlayerInfo(player player, redis *redis.Client, status string) {
 		return
 	}
 
-	err = json.Unmarshal([]byte(data), &player)
+	var redis_pl Player
+	err = json.Unmarshal([]byte(data), &redis_pl)
 	if err != nil {
 		log.Println("UNmarshal err: ", err)
 		return
 	}
 
 	player.Status = status
+	player.Score = redis_pl.Score + right_answer
 
 	playerJSON, err := json.Marshal(player)
 	if err != nil {
@@ -71,6 +73,7 @@ func savePlayerInfo(player player, redis *redis.Client, status string) {
 		return
 	}
 
+	fmt.Println("Player write: ", player)
 	err = redis.Set(ctx, player.Name, playerJSON, doesnt_expire).Err()
 	if err != nil {
 		log.Println("Updating player status:", err)
@@ -128,7 +131,7 @@ func readQuestion(redis *redis.Client) question {
 	return options[curr_question]
 }
 
-func whichAnswer(answer string, redis *redis.Client, tmpl *template.Template, conn *websocket.Conn) {
+func whichAnswer(answerColor string, redis *redis.Client, tmpl *template.Template, conn *websocket.Conn, answer string, curr_player Player) {
 	html := `
 	<div id="n_answered" hx-swap-oob="innerHTML">
 	%d
@@ -148,19 +151,46 @@ func whichAnswer(answer string, redis *redis.Client, tmpl *template.Template, co
 	}
 
 	var ans_button bytes.Buffer
-	err := tmpl.ExecuteTemplate(&ans_button, answer, readQuestion(redis))
+	err := tmpl.ExecuteTemplate(&ans_button, answerColor, readQuestion(redis))
 	if err != nil {
 		log.Println(err)
 	}
 
-	gray := strings.ReplaceAll(ans_button.String(), colors[answer], "bg-gray-200")
+	gray := strings.ReplaceAll(ans_button.String(), colors[answerColor], "bg-gray-200")
 
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(gray)); err != nil {
 		log.Println(err)
 		return
 	}
 
+	curr_question_string, err := redis.Get(ctx, curr_question_key).Result()
+	if err != nil {
+		log.Println("We can't find them")
+	}
+
+	curr_question, err := strconv.Atoi(curr_question_string)
+	if err != nil {
+		log.Println("Converting n_answered: ", err)
+	}
+
+	var questions []question
+
+	data, err := redis.Get(ctx, Questions).Result()
+	if err != nil {
+		log.Println("We can't find them")
+	}
+
+	err = json.Unmarshal([]byte(data), &questions)
+	if err != nil {
+		log.Println("Can't unmarshal them data")
+	}
+
+	if questions[curr_question].Correct == answer {
+		fmt.Println("Before func", curr_player)
+		savePlayerInfo(curr_player, redis, connected)
+	}
+
 	if answer_count == len(server_lobby) {
-		leadBoard(redis)
+		LeaderBoard(redis)
 	}
 }
