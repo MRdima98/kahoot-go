@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"text/template"
@@ -19,9 +20,11 @@ var upgrader = websocket.Upgrader{
 }
 
 var ctx = context.Background()
+var whichGame string
 
 const (
 	playerControlsPath = "templates/playerControls.html"
+	flashcardPath      = "templates/flashcard.html"
 	connected          = "connected"
 	disconnected       = "disconnected"
 	no_answer          = ""
@@ -29,6 +32,7 @@ const (
 	curr_question_key  = "curr_question"
 	base_score         = 0
 	right_answer       = 100
+	sara               = "Sara"
 )
 
 var master *websocket.Conn
@@ -92,12 +96,23 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if result["name"] != nil {
+			if !nameCheck(conn) {
+				continue
+			}
+
+			fmt.Println("game: ", whichGame)
+			fmt.Println("pwd: ", result["pwd"].(string))
+			if whichGame == sara && result["pwd"].(string) != "wasp" {
+				continue
+			}
+
 			curr_player = Player{
 				Name:   result["name"].(string),
 				Status: connected,
 				Answer: no_answer,
 				Score:  base_score,
 			}
+
 			savePlayerInfo(curr_player, rdb, connected)
 			server_lobby[curr_player.Name] = conn
 			client_lobby = append(client_lobby, curr_player)
@@ -119,6 +134,26 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
+
+func nameCheck(conn *websocket.Conn) bool {
+	tmpl, err := template.ParseFiles(flashcardPath)
+	if err != nil {
+		log.Println(err)
+	}
+
+	var tpl bytes.Buffer
+	err = tmpl.Execute(&tpl, nil)
+	if err != nil {
+		log.Printf("template execution: %s", err)
+	}
+
+	if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+		log.Println(err)
+		return false
+	}
+
+	return true
 }
 
 func RedisClient() *redis.Client {

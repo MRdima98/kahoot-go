@@ -15,9 +15,13 @@ import (
 
 const (
 	index              = "index.html"
+	game               = "game.html"
+	lobby              = "lobby.html"
 	playerMenu         = "playerMenu.html"
 	playerControls     = "playerControls.html"
 	indexPath          = "templates/index.html"
+	lobbyPath          = "templates/lobby.html"
+	gamePath           = "templates/game.html"
 	headPath           = "templates/head.html"
 	footerPath         = "templates/footer.html"
 	playerMenuPath     = "templates/playerMenu.html"
@@ -33,7 +37,7 @@ var players = []string{}
 var Answered = 0
 var tmpl = template.Must(
 	template.ParseFiles(
-		indexPath, footerPath, headPath, playerControlsPath, playerMenuPath,
+		gamePath, footerPath, headPath, playerControlsPath, playerMenuPath, indexPath, lobbyPath,
 	),
 )
 
@@ -43,7 +47,8 @@ func main() {
 
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
-	// http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/lobby", lobbyHandler)
 	http.HandleFunc("/game", handlers.GameHandler)
 	http.HandleFunc("/player", playerHandler)
 	http.HandleFunc("/socket", handlers.PlayerHandler)
@@ -70,25 +75,50 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path,
 	})
 	if err != nil {
-		// log.Println("asdfa")
-		// http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func playerHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		fmt.Println(r.FormValue("name"))
-		err := tmpl.ExecuteTemplate(w, playerControls, nil)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+	// if r.Method == "POST" {
+	// 	fmt.Println(r.FormValue("name"))
+	// 	err := tmpl.ExecuteTemplate(w, playerControls, nil)
+	// 	if err != nil {
+	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	}
+	// 	return
+	// }
+
+	queryParams := r.URL.Query()
+	sara := false
+
+	for _, values := range queryParams {
+		for _, el := range values {
+			if el == "Sara" {
+				sara = true
+			}
 		}
-		return
 	}
 
 	err := tmpl.ExecuteTemplate(w, playerMenu, struct {
 		Path string
+		Sara bool
 	}{
 		r.URL.Path,
+		sara,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func lobbyHandler(w http.ResponseWriter, r *http.Request) {
+	err := tmpl.ExecuteTemplate(w, lobby, struct {
+		Path string
+		Link string
+	}{
+		r.URL.Path,
+		"quizaara.mrdima98.dev/player",
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

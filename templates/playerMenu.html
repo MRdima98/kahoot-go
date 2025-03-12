@@ -1,12 +1,21 @@
 {{ template "head.html" .}}
 
 <div id="Menu" hx-ext="ws" ws-connect="/socket" class="flex flex-col justify-center h-full">
+    <div id="flashcard"
+        class=" flex justify-center items-center border border-red-300 text-red-300 p-3 rounded-lg cursor-not-allowed opacity-50"
+        hidden>
+        Give me a name buddy!
+    </div>
     <div id="UI" class="flex flex-col justify-center items-center h-96 text-white">
         <form id="form" ws-send class="flex flex-col gap-1 justify-center items-center h-full w-full">
             <span> Quizaara: Kahoot per Saretta</span>
-            <span> Qual è il tuo nome? </span>
-            <input type="text" name="name" />
-            <button class="bg-blue-800">
+            <span class="mt-4"> Qual è il tuo nome? </span>
+            <input class="border border-violet-400 rounded-lg" type="text" name="name" />
+            {{ if .Sara }}
+            <span class="mt-4"> La password; vichingo! </span>
+            <input class="border border-violet-400 rounded-lg" type="text" name="pwd" />
+            {{ end }}
+            <button class="border border-blue-400 rounder-lg bg-blue-800">
                 La accendiamo?
             </button>
         </form>
@@ -17,12 +26,12 @@
         </button>
     </form>
 
+
     <script>
         document.addEventListener("htmx:wsOpen", function () {
             /** @type {HTMLButtonElement} */
             const player = document.getElementById("player");
             player.click();
-            console.log("gotem")
         });
     </script>
 </div>

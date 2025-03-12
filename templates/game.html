@@ -1,0 +1,60 @@
+{{ template "head.html" .}}
+
+<div hx-ext="ws" ws-connect="/questions" class="w-screen h-screen flex justify-center items-center">
+    {{ define "body"}}
+    <div id="body" hx-swap-oob="innerHTML" class="bg-gray-200 p-6 w-4/5 h-4/5 text-9xl">
+        <!--<script src="./static/js/index.js"></script>-->
+        <div class="flex flex-col justify-between items-center w-full h-full">
+            <div class="flex justify-center items-center font-bold p-4 bg-blue-200 w-full
+                py-8
+                ">
+                {{ .Current.Quest }}
+            </div>
+            <div class="flex justify-around items-center w-full">
+                <div class="flex flex-col justify-center items-center">
+                    <span>
+                        <div id="n_answered" hx-swap-oob="innerHTML">
+                            {{ .Answered }}
+                        </div>
+                        <form hidden>
+                            <button id="timeout" ws-send hx-post="/questions">
+                                <input type="text" name="timeout" value="timeout" />
+                            </button>
+                        </form>
+                    </span>
+                    <span>ans</span>
+                </div>
+                <img id="picture" onload="fixDim()" class="p-4 w-160" src="{{ .Current.Pic }}" />
+                <div id="timer" class="w-64 h-64 bg-red-500 rounded-full flex justify-center items-center ">
+                    30
+                </div>
+            </div>
+            <div class="flex flex-col gap-5 w-full">
+                <div class="flex gap-5 w-full justify-around">
+                    <div class="bg-kahootRed w-full h-full flex justify-center gap-16 py-8">
+                        <img class="w-30" src="static/svgs/1.svg" />
+                        {{ .Current.Ans1 }}
+                    </div>
+                    <div class="bg-kahootBlue w-full flex justify-center py-8 gap-16">
+                        <img class="w-30" src="static/svgs/2.svg" />
+                        {{ .Current.Ans2 }}
+                    </div>
+                </div>
+                <div class="flex gap-5 w-full justify-around">
+                    <div class="bg-kahootGreen w-full h-full flex justify-center py-8 gap-16">
+                        <img class="w-30" src="static/svgs/3.svg" />
+                        {{ .Current.Ans3 }}
+                    </div>
+                    <div class="bg-kahootYellow w-full flex justify-center py-8 gap-16">
+                        <img class="w-30" src="static/svgs/4.svg" />
+                        {{ .Current.Ans4 }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{ end }}
+    {{ template "body" . }}
+</div>
+
+{{ template "footer.html" .}}

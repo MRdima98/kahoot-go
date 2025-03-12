@@ -19,17 +19,17 @@ var Answered = 0
 var URL string
 
 const (
-	index               = "index.html"
+	game                = "game.html"
 	leaderBoardTemplate = "leaderBoard.html"
 	leaderBoardPath     = "templates/leaderBoard.html"
-	indexPath           = "templates/index.html"
+	gamePath            = "templates/game.html"
 	headPath            = "templates/head.html"
 	footerPath          = "templates/footer.html"
 )
 
 var gameTmpl = template.Must(
 	template.ParseFiles(
-		indexPath, footerPath, headPath, leaderBoardPath,
+		gamePath, footerPath, headPath, leaderBoardPath,
 	),
 )
 
@@ -78,6 +78,16 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	redis := RedisClient()
 	URL = r.URL.Path
 
+	queryParams := r.URL.Query()
+
+	for _, values := range queryParams {
+		for _, el := range values {
+			if el == sara {
+				whichGame = sara
+			}
+		}
+	}
+
 	var questions []question
 
 	data, err := redis.Get(context.Background(), Questions).Result()
@@ -109,7 +119,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 
 	curr_question := 0
 
-	err = gameTmpl.ExecuteTemplate(w, index, struct {
+	err = gameTmpl.ExecuteTemplate(w, game, struct {
 		Path     string
 		Answered int
 		Current  question
