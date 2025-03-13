@@ -21,6 +21,7 @@ type Player struct {
 	Name   string `json:"name"`
 	Status string `json:"status"`
 	Answer string `json:"answer"`
+	Lobby  string `json:"lobby"`
 	Score  int    `json:"score"`
 }
 
@@ -140,12 +141,12 @@ func whichAnswer(answerColor string, redis *redis.Client, tmpl *template.Templat
 	answer_count := saveNAnswered(redis)
 	html = fmt.Sprintf(html, answer_count)
 
-	if master == nil {
+	if lobbies[curr_player.Lobby] == nil {
 		log.Println("There is no open game")
 		return
 	}
 
-	if err := master.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
+	if err := lobbies[curr_player.Lobby].WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
 		log.Println("Can't sign that a player wrote a message", err)
 		return
 	}
@@ -191,6 +192,6 @@ func whichAnswer(answerColor string, redis *redis.Client, tmpl *template.Templat
 	}
 
 	if answer_count == len(server_lobby) {
-		LeaderBoard(redis)
+		LeaderBoard(redis, curr_player.Lobby)
 	}
 }

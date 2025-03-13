@@ -80,15 +80,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func playerHandler(w http.ResponseWriter, r *http.Request) {
-	// if r.Method == "POST" {
-	// 	fmt.Println(r.FormValue("name"))
-	// 	err := tmpl.ExecuteTemplate(w, playerControls, nil)
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	}
-	// 	return
-	// }
-
 	queryParams := r.URL.Query()
 	sara := false
 
@@ -114,11 +105,13 @@ func playerHandler(w http.ResponseWriter, r *http.Request) {
 
 func lobbyHandler(w http.ResponseWriter, r *http.Request) {
 	err := tmpl.ExecuteTemplate(w, lobby, struct {
-		Path string
-		Link string
+		Path  string
+		Link  string
+		Lobby string
 	}{
 		r.URL.Path,
 		"quizaara.mrdima98.dev/player",
+		"",
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

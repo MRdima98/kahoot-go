@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"text/template"
@@ -43,6 +44,7 @@ type question struct {
 	Pic     string `json:"path"`
 }
 
+// TODO
 func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("\nGame master in the house!")
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -52,7 +54,29 @@ func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	redis := RedisClient()
-	master = conn
+	lobby := genRandomLobby()
+	lobbyHTML := `<strong id="lobby" hx-swap-oob="outerHTML"> %s </strong>`
+	lobby_inputHTML := `<input id="lobby-input" type="text" name="lobby" value="%s" hidden />`
+	lobbyHTML = fmt.Sprintf(lobbyHTML, lobby)
+	lobby_inputHTML = fmt.Sprintf(lobby_inputHTML, lobby)
+	lobbies[lobby] = conn
+
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(lobbyHTML)); err != nil {
+		log.Println(err)
+		return
+	}
+
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(lobby_inputHTML)); err != nil {
+		log.Println(err)
+		return
+	}
+
+	conn.SetCloseHandler(func(code int, text string) error {
+		delete(lobbies, lobby)
+		return nil
+	})
+
+	fmt.Println("Lobby! : ", lobbies)
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -69,9 +93,28 @@ func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if result["timeout"] != nil {
-			LeaderBoard(redis)
+			LeaderBoard(redis, result["lobby"].(string))
+		}
+
+		if result["start-game"] != nil {
+			fmt.Println(result["lobby"])
+			loadFirstQuestion(result["lobby"].(string))
 		}
 	}
+}
+
+func genRandomLobby() string {
+	const alfanumeric = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	lobby := ""
+	const max_range = len(alfanumeric)
+
+	for range 4 {
+		rand.New(rand.NewSource(time.Now().Unix()))
+		i := rand.Intn(max_range)
+		lobby = lobby + string(alfanumeric[i])
+	}
+
+	return lobby
 }
 
 func GameHandler(w http.ResponseWriter, r *http.Request) {
@@ -136,7 +179,7 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	redis.Close()
 }
 
-func LeaderBoard(redis *redis.Client) {
+func LeaderBoard(redis *redis.Client, lobby string) {
 	tmpl, err := template.ParseFiles(leaderBoardPath)
 	if err != nil {
 		log.Println(err)
@@ -150,7 +193,7 @@ func LeaderBoard(redis *redis.Client) {
 		log.Printf("template execution: %s", err)
 	}
 
-	if err := master.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+	if err := lobbies[lobby].WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
 		log.Println(err)
 		return
 	}
@@ -217,7 +260,7 @@ func LeaderBoard(redis *redis.Client) {
 		log.Printf("template execution: %s", err)
 	}
 
-	if err := master.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+	if err := lobbies[lobby].WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
 		log.Println(err)
 		return
 	}
@@ -257,5 +300,53 @@ func refresh_lobby(redis *redis.Client) {
 		}
 
 		client_lobby[i].Score = player.Score
+	}
+}
+
+func loadFirstQuestion(lobby string) {
+	redis := RedisClient()
+	var questions []question
+
+	data, err := redis.Get(context.Background(), Questions).Result()
+	if err != nil {
+		log.Println("We can't find them")
+	}
+
+	err = json.Unmarshal([]byte(data), &questions)
+	if err != nil {
+		log.Println("Can't unmarshal them data")
+	}
+
+	data, err = redis.Get(context.Background(), "n_answered").Result()
+	if err != nil {
+		log.Println("We can't count")
+	}
+
+	Answered, err = strconv.Atoi(data)
+	if err != nil {
+		log.Println("Converting n_answered: ", err)
+	}
+
+	redis = RedisClient()
+
+	err = redis.Set(context.Background(), curr_question_key, 0, 0).Err()
+	if err != nil {
+		log.Println("Can't check which quest", err)
+	}
+
+	curr_question := 0
+
+	var game_start bytes.Buffer
+	err = gameTmpl.ExecuteTemplate(&game_start, "body", struct {
+		Answered int
+		Current  question
+	}{
+		Answered,
+		questions[curr_question],
+	})
+
+	if err := lobbies[lobby].WriteMessage(websocket.TextMessage, game_start.Bytes()); err != nil {
+		log.Println(err)
+		return
 	}
 }

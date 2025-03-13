@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"text/template"
@@ -13,14 +12,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 )
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 8192,
-}
-
-var ctx = context.Background()
-var whichGame string
 
 const (
 	playerControlsPath = "templates/playerControls.html"
@@ -35,7 +26,14 @@ const (
 	sara               = "Sara"
 )
 
-var master *websocket.Conn
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 8192,
+}
+var ctx = context.Background()
+
+var lobbies = make(map[string]*websocket.Conn)
+var whichGame string
 
 func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("\n\nOpened PLAYER connection!")
@@ -100,17 +98,16 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			fmt.Println("game: ", whichGame)
-			fmt.Println("pwd: ", result["pwd"].(string))
-			if whichGame == sara && result["pwd"].(string) != "wasp" {
-				continue
-			}
+			// if whichGame == sara && result["pwd"].(string) != "wasp" {
+			// 	continue
+			// }
 
 			curr_player = Player{
 				Name:   result["name"].(string),
 				Status: connected,
 				Answer: no_answer,
 				Score:  base_score,
+				Lobby:  result["lobby"].(string),
 			}
 
 			savePlayerInfo(curr_player, rdb, connected)
