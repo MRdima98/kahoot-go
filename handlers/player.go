@@ -23,6 +23,7 @@ type Player struct {
 	Answer string `json:"answer"`
 	Lobby  string `json:"lobby"`
 	Score  int    `json:"score"`
+	conn   *websocket.Conn
 }
 
 type player_options struct {
@@ -38,9 +39,6 @@ var colors = map[string]string{
 	"green_answer":  "bg-kahootGreen",
 	"yellow_answer": "bg-kahootYellow",
 }
-
-var server_lobby = make(map[string]*websocket.Conn)
-var client_lobby []Player
 
 func savePlayerInfo(player Player, redis *redis.Client, status string) {
 	data, err := redis.Get(ctx, player.Name).Result()
@@ -141,12 +139,12 @@ func whichAnswer(answerColor string, redis *redis.Client, tmpl *template.Templat
 	answer_count := saveNAnswered(redis)
 	html = fmt.Sprintf(html, answer_count)
 
-	if lobbies[curr_player.Lobby] == nil {
+	if lobbies[curr_player.Lobby].master == nil {
 		log.Println("There is no open game")
 		return
 	}
 
-	if err := lobbies[curr_player.Lobby].WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
+	if err := lobbies[curr_player.Lobby].master.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
 		log.Println("Can't sign that a player wrote a message", err)
 		return
 	}
@@ -191,7 +189,7 @@ func whichAnswer(answerColor string, redis *redis.Client, tmpl *template.Templat
 		savePlayerInfo(curr_player, redis, connected)
 	}
 
-	if answer_count == len(server_lobby) {
+	if answer_count == len(lobbies[curr_player.Lobby].players) {
 		LeaderBoard(redis, curr_player.Lobby)
 	}
 }

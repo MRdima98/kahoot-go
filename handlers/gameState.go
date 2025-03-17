@@ -13,6 +13,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// TODO: just move stuff to the player
+
 const (
 	playerControlsPath = "templates/playerControls.html"
 	flashcardPath      = "templates/flashcard.html"
@@ -32,7 +34,12 @@ var upgrader = websocket.Upgrader{
 }
 var ctx = context.Background()
 
-var lobbies = make(map[string]*websocket.Conn)
+type Game struct {
+	master  *websocket.Conn
+	players map[string]Player
+}
+
+var lobbies = make(map[string]Game)
 var whichGame string
 
 func PlayerHandler(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +59,7 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		savePlayerInfo(curr_player, rdb, disconnected)
-		delete(server_lobby, curr_player.Name)
+		delete(lobbies[curr_player.Lobby].players, curr_player.Name)
 
 		rdb.Close()
 		return nil
@@ -97,22 +104,35 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 			if !nameCheck(conn) {
 				continue
 			}
+			lobby := result["lobby"].(string)
+			name := result["name"].(string)
 
 			// if whichGame == sara && result["pwd"].(string) != "wasp" {
 			// 	continue
 			// }
 
 			curr_player = Player{
-				Name:   result["name"].(string),
+				Name:   name,
 				Status: connected,
 				Answer: no_answer,
 				Score:  base_score,
-				Lobby:  result["lobby"].(string),
+				Lobby:  lobby,
 			}
 
 			savePlayerInfo(curr_player, rdb, connected)
-			server_lobby[curr_player.Name] = conn
-			client_lobby = append(client_lobby, curr_player)
+
+			if game, ok := lobbies[lobby]; ok {
+				if game.players == nil {
+					game.players = make(map[string]Player)
+				}
+
+				if pl, ok := game.players[name]; ok {
+					pl.conn = conn
+					game.players[name] = pl
+				}
+
+				lobbies[lobby] = game
+			}
 
 			tmpl, err = template.ParseFiles(playerControlsPath)
 			if err != nil {

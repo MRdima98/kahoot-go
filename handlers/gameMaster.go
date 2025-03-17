@@ -44,7 +44,7 @@ type question struct {
 	Pic     string `json:"path"`
 }
 
-// TODO
+// TODO:
 func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("\nGame master in the house!")
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -59,7 +59,11 @@ func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 	lobby_inputHTML := `<input id="lobby-input" type="text" name="lobby" value="%s" hidden />`
 	lobbyHTML = fmt.Sprintf(lobbyHTML, lobby)
 	lobby_inputHTML = fmt.Sprintf(lobby_inputHTML, lobby)
-	lobbies[lobby] = conn
+
+	if entry, ok := lobbies[lobby]; ok {
+		entry.master = conn
+		lobbies[lobby] = entry
+	}
 
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(lobbyHTML)); err != nil {
 		log.Println(err)
@@ -103,6 +107,7 @@ func QuestionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO: You should check if the code is already in use
 func genRandomLobby() string {
 	const alfanumeric = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	lobby := ""
@@ -179,21 +184,21 @@ func GameHandler(w http.ResponseWriter, r *http.Request) {
 	redis.Close()
 }
 
+// TODO: Leaderboard should be refactored
 func LeaderBoard(redis *redis.Client, lobby string) {
 	tmpl, err := template.ParseFiles(leaderBoardPath)
 	if err != nil {
 		log.Println(err)
 	}
 
-	refresh_lobby(redis)
-	fmt.Println("Lobby: ", client_lobby)
+	refresh_lobby(redis, lobby)
 	var tpl bytes.Buffer
-	err = tmpl.Execute(&tpl, client_lobby)
+	err = tmpl.Execute(&tpl, lobbies[lobby].players)
 	if err != nil {
 		log.Printf("template execution: %s", err)
 	}
 
-	if err := lobbies[lobby].WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+	if err := lobbies[lobby].master.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
 		log.Println(err)
 		return
 	}
@@ -260,7 +265,7 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 		log.Printf("template execution: %s", err)
 	}
 
-	if err := lobbies[lobby].WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+	if err := lobbies[lobby].master.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
 		log.Println(err)
 		return
 	}
@@ -276,8 +281,8 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 		log.Printf("template execution: %s", err)
 	}
 
-	for _, conn := range server_lobby {
-		if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+	for _, pl := range lobbies[lobby].players {
+		if err := pl.conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
 			log.Println(err)
 			return
 		}
@@ -285,8 +290,8 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 
 }
 
-func refresh_lobby(redis *redis.Client) {
-	for i, pl := range client_lobby {
+func refresh_lobby(redis *redis.Client, lobby string) {
+	for k, pl := range lobbies[lobby].players {
 		var player Player
 		data, err := redis.Get(ctx, pl.Name).Result()
 		if err != nil {
@@ -299,7 +304,11 @@ func refresh_lobby(redis *redis.Client) {
 			return
 		}
 
-		client_lobby[i].Score = player.Score
+		if game, ok := lobbies[lobby]; ok {
+			if entry, ok := game.players[k]; ok {
+				entry.Score = player.Score
+			}
+		}
 	}
 }
 
@@ -345,7 +354,7 @@ func loadFirstQuestion(lobby string) {
 		questions[curr_question],
 	})
 
-	if err := lobbies[lobby].WriteMessage(websocket.TextMessage, game_start.Bytes()); err != nil {
+	if err := lobbies[lobby].master.WriteMessage(websocket.TextMessage, game_start.Bytes()); err != nil {
 		log.Println(err)
 		return
 	}
