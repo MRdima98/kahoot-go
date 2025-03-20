@@ -1,7 +1,7 @@
 {{ template "head.html" .}}
 <div hx-ext="ws" ws-connect="/questions" class="w-screen h-screen flex justify-center items-center">
-    <div id="body" hx-swap-oob="innerHTML" class="bg-gray-200 p-6 w-4/5 h-4/5 text-9xl">
-        <div class="h-screen w-screen flex justify-center items-center">
+    <div id="body" hx-swap-oob="innerHTML" class="bg-gray-200 p-6 w-4/5 h-4/5 text-5xl">
+        <div class="h-full w-full flex justify-center items-center overflow-hidden">
             <main
                 class="bg-gray-400 text-white flex flex-col gap-10 justify-center items-center self-center h-screen w-10/12">
                 <span>Join on the link <strong class="text-yellow-400"> {{ .Link }} </strong></span>

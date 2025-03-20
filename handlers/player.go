@@ -3,11 +3,15 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
+	"runtime"
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
@@ -15,6 +19,9 @@ import (
 
 const (
 	doesnt_expire = 0
+	invalid       = true
+	valid         = false
+	empty_name    = ""
 )
 
 type Player struct {
@@ -40,19 +47,156 @@ var colors = map[string]string{
 	"yellow_answer": "bg-kahootYellow",
 }
 
-func savePlayerInfo(player Player, redis *redis.Client, status string) {
-	data, err := redis.Get(ctx, player.Name).Result()
+// TODO: Players should not have to type again to reconnect on reload, I will
+// take care with cookies or mc address
+func PlayerHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("\n\nOpened PLAYER connection!")
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		playerJSON, err := json.Marshal(player)
-		if err != nil {
-			log.Println("Marshal err: ", err)
+		log.Println(err)
+		return
+	}
+
+	var tmpl *template.Template
+	var curr_player Player
+	redis := RedisClient()
+
+	conn.SetCloseHandler(func(code int, text string) error {
+		if curr_player == (Player{}) {
+			return errors.New("No player on this connection...somehow")
 		}
 
-		err = redis.Set(ctx, player.Name, playerJSON, doesnt_expire).Err()
+		// TODO: This should allow the recconect, atm I don't feel like it.
+		// savePlayer(curr_player, redis)
+		delete(lobbies[curr_player.Lobby].players, curr_player.Name)
+
+		redis.Close()
+		return nil
+	})
+
+	for {
+		_, p, err := conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
+			return
 		}
 
+		var result map[string]any
+		err = json.Unmarshal(p, &result)
+		if err != nil {
+			log.Println("Player handler unmarshall error", err)
+			return
+		}
+
+		switch {
+		case result["ans1"] != nil:
+			checkAnswer("red_answer", redis, result["ans1"].(string), curr_player)
+		case result["ans2"] != nil:
+			checkAnswer("blue_answer", redis, result["ans2"].(string), curr_player)
+		case result["ans3"] != nil:
+			checkAnswer("green_answer", redis, result["ans3"].(string), curr_player)
+		case result["ans4"] != nil:
+			checkAnswer("yellow_answer", redis, result["ans4"].(string), curr_player)
+		}
+
+		if result["name"] != nil {
+			lobby := result["lobby"].(string)
+			name := result["name"].(string)
+
+			if invalidName(conn, name) {
+				continue
+			}
+
+			// if whichGame == sara && result["pwd"].(string) != "wasp" {
+			// 	continue
+			// }
+
+			curr_player = Player{
+				Name:   name,
+				Status: connected,
+				Answer: no_answer,
+				Score:  base_score,
+				Lobby:  lobby,
+				conn:   conn,
+			}
+
+			savePlayerRedis(curr_player, redis)
+			savePlayerMemory(curr_player)
+
+			tmpl, err = template.ParseFiles(playerControlsPath)
+			if err != nil {
+				log.Println(err)
+			}
+
+			var tpl bytes.Buffer
+			err = tmpl.Execute(&tpl, readQuestion(redis, Questions))
+			if err != nil {
+				log.Printf("template execution: %s", err)
+			}
+
+			if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+				log.Println(err)
+				return
+			}
+		}
+	}
+}
+
+func savePlayerMemory(new_player Player) {
+	game, ok := lobbies[new_player.Lobby]
+	if !ok {
+		log.Println("Game object not initialized")
+		return
+	}
+
+	if player, ok := game.players[new_player.Name]; ok {
+		player.conn = new_player.conn
+		game.players[new_player.Name] = player
+	} else {
+		game.players[new_player.Name] = new_player
+	}
+}
+
+func invalidName(conn *websocket.Conn, name string) bool {
+	if name != empty_name {
+		return valid
+	}
+
+	tmpl, err := template.ParseFiles(flashCardPath)
+	if err != nil {
+		log.Println(err)
+	}
+
+	var tpl bytes.Buffer
+	err = tmpl.Execute(&tpl, nil)
+	if err != nil {
+		log.Printf("template execution: %s", err)
+	}
+
+	if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+		log.Println(err)
+		return false
+	}
+
+	return invalid
+}
+
+func savePlayerRedis(player Player, redis *redis.Client) {
+	playerJSON, err := json.Marshal(player)
+	if err != nil {
+		log.Println("Marshal err: ", err)
+	}
+
+	err = redis.Set(ctx, player.Name, playerJSON, doesnt_expire).Err()
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func updatePlayerScore(player Player, redis *redis.Client) {
+	data, err := redis.Get(ctx, player.Name).Result()
+	if err != nil {
+		log.Printf("Can't update the score of this player: %s\n", player.Name)
 		return
 	}
 
@@ -63,7 +207,6 @@ func savePlayerInfo(player Player, redis *redis.Client, status string) {
 		return
 	}
 
-	player.Status = status
 	player.Score = redis_pl.Score + right_answer
 
 	playerJSON, err := json.Marshal(player)
@@ -72,21 +215,23 @@ func savePlayerInfo(player Player, redis *redis.Client, status string) {
 		return
 	}
 
-	fmt.Println("Player write: ", player)
 	err = redis.Set(ctx, player.Name, playerJSON, doesnt_expire).Err()
 	if err != nil {
 		log.Println("Updating player status:", err)
 		return
 	}
-
-	log.Printf("Player %s %s", player.Name, player.Status)
 }
 
-func saveNAnswered(redis *redis.Client) int {
-	n_answered := "n_answered"
+func saveNAnswered(redis *redis.Client, lobby string) int {
+	n_answered := answered + lobby
 	tmp, err := redis.Get(ctx, n_answered).Result()
 	if err != nil {
-		log.Println("Reading n_answered: ", err)
+		log.Println("This is a new lobby! Init answer count.")
+		err = redis.Set(ctx, n_answered, 0, 1*time.Hour).Err()
+		if err != nil {
+			log.Println("Writing n_answered: ", err)
+		}
+		tmp = "0"
 	}
 
 	count, err := strconv.Atoi(tmp)
@@ -104,8 +249,8 @@ func saveNAnswered(redis *redis.Client) int {
 	return count
 }
 
-func readQuestion(redis *redis.Client) question {
-	tmp, err := redis.Get(ctx, Questions).Result()
+func readQuestion(redis *redis.Client, lobby string) question {
+	tmp, err := redis.Get(ctx, lobby).Result()
 	if err != nil {
 		log.Println("Reading questions", err)
 	}
@@ -130,46 +275,53 @@ func readQuestion(redis *redis.Client) question {
 	return options[curr_question]
 }
 
-func whichAnswer(answerColor string, redis *redis.Client, tmpl *template.Template, conn *websocket.Conn, answer string, curr_player Player) {
+func checkAnswer(answerColor string, redis *redis.Client, answer string, curr_player Player) {
+	tmpl, err := template.ParseFiles(playerControlsPath)
+	if err != nil {
+		log.Println(err)
+	}
+
+	var ans_button bytes.Buffer
+	answer_count := saveNAnswered(redis, curr_player.Lobby)
 	html := `
 	<div id="n_answered" hx-swap-oob="innerHTML">
 	%d
 	</div>
 	`
-	answer_count := saveNAnswered(redis)
 	html = fmt.Sprintf(html, answer_count)
+	master := lobbies[curr_player.Lobby].master
 
-	if lobbies[curr_player.Lobby].master == nil {
-		log.Println("There is no open game")
+	if master == nil {
+		log.Println("There is no open game (no master)")
 		return
 	}
 
-	if err := lobbies[curr_player.Lobby].master.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
-		log.Println("Can't sign that a player wrote a message", err)
+	if err := master.WriteMessage(websocket.TextMessage, []byte(html)); err != nil {
+		log.Println("Can't tell the master a player answered", err)
 		return
 	}
 
-	var ans_button bytes.Buffer
-	err := tmpl.ExecuteTemplate(&ans_button, answerColor, readQuestion(redis))
+	err = tmpl.ExecuteTemplate(&ans_button, answerColor, readQuestion(redis, Questions))
 	if err != nil {
-		log.Println(err)
+		log.Println("Can't read question for player", err)
 	}
 
-	gray := strings.ReplaceAll(ans_button.String(), colors[answerColor], "bg-gray-200")
+	grayButton := strings.ReplaceAll(ans_button.String(), colors[answerColor], "bg-gray-200")
 
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(gray)); err != nil {
-		log.Println(err)
+	if err := curr_player.conn.WriteMessage(websocket.TextMessage, []byte(grayButton)); err != nil {
+		log.Println("I can't gray the button for a player", err)
 		return
 	}
 
 	curr_question_string, err := redis.Get(ctx, curr_question_key).Result()
 	if err != nil {
-		log.Println("We can't find them")
+		log.Println("Can't load the index of current question; player method")
 	}
 
 	curr_question, err := strconv.Atoi(curr_question_string)
 	if err != nil {
-		log.Println("Converting n_answered: ", err)
+		_, file, line, _ := runtime.Caller(1)
+		log.Fatalf("Not a numba %s:%d - %v", file, line, err)
 	}
 
 	var questions []question
@@ -185,10 +337,11 @@ func whichAnswer(answerColor string, redis *redis.Client, tmpl *template.Templat
 	}
 
 	if questions[curr_question].Correct == answer {
-		fmt.Println("Before func", curr_player)
-		savePlayerInfo(curr_player, redis, connected)
+		updatePlayerScore(curr_player, redis)
 	}
 
+	fmt.Println("Count: ", answer_count)
+	fmt.Println("Players: ", lobbies[curr_player.Lobby].players)
 	if answer_count == len(lobbies[curr_player.Lobby].players) {
 		LeaderBoard(redis, curr_player.Lobby)
 	}

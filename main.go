@@ -49,10 +49,10 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/lobby", lobbyHandler)
-	http.HandleFunc("/game", handlers.GameHandler)
+	// http.HandleFunc("/game", handlers.GameHandler)
 	http.HandleFunc("/player", playerHandler)
 	http.HandleFunc("/socket", handlers.PlayerHandler)
-	http.HandleFunc("/questions", handlers.QuestionsHandler)
+	http.HandleFunc("/questions", handlers.GameMasterSocketHandler)
 
 	srv := &http.Server{Addr: ":8080"}
 
