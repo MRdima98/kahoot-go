@@ -181,9 +181,6 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 		lobbies[lobby] = entry
 	}
 
-	fmt.Println("Master lobby: ", lobby)
-	fmt.Println("Master curr question: ", lobbies[lobby].curr_question)
-
 	if lobbies[lobby].curr_question == len(questions) {
 		return
 	}
@@ -227,7 +224,7 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 }
 
 func refresh_lobby(redis *redis.Client, lobby string) {
-	for k, pl := range lobbies[lobby].players {
+	for key, pl := range lobbies[lobby].players {
 		var player Player
 		data, err := redis.Get(ctx, pl.Name).Result()
 		if err != nil {
@@ -241,9 +238,11 @@ func refresh_lobby(redis *redis.Client, lobby string) {
 		}
 
 		if game, ok := lobbies[lobby]; ok {
-			if entry, ok := game.players[k]; ok {
+			if entry, ok := game.players[key]; ok {
 				entry.Score = player.Score
+				game.players[key] = entry
 			}
+			lobbies[lobby] = game
 		}
 	}
 }
@@ -262,6 +261,7 @@ func loadFirstQuestion(lobby string) {
 		log.Println("Can't unmarshal them data")
 	}
 
+	// TODO: Move counter to game object
 	data, err = redis.Get(context.Background(), answered+lobby).Result()
 	if err != nil {
 		log.Println("We can't count")

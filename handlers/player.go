@@ -261,9 +261,6 @@ func readQuestion(redis *redis.Client, lobby string) question {
 		log.Println("Unmarshal err: ", err)
 	}
 
-	fmt.Println("Player lobby: ", lobby)
-	fmt.Println("Player curr question: ", lobbies[lobby].curr_question)
-
 	return options[lobbies[lobby].curr_question]
 }
 
