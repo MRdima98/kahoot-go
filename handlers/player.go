@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"runtime"
 	"strconv"
 	"strings"
 	"text/template"
@@ -121,7 +120,7 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			savePlayerRedis(curr_player, redis)
-			savePlayerMemory(curr_player)
+			savePlayer(curr_player)
 
 			tmpl, err = template.ParseFiles(playerControlsPath)
 			if err != nil {
@@ -129,7 +128,7 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			var tpl bytes.Buffer
-			err = tmpl.Execute(&tpl, readQuestion(redis, Questions))
+			err = tmpl.Execute(&tpl, readQuestion(redis, curr_player.Lobby))
 			if err != nil {
 				log.Printf("template execution: %s", err)
 			}
@@ -142,7 +141,7 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func savePlayerMemory(new_player Player) {
+func savePlayer(new_player Player) {
 	game, ok := lobbies[new_player.Lobby]
 	if !ok {
 		log.Println("Game object not initialized")
@@ -222,11 +221,11 @@ func updatePlayerScore(player Player, redis *redis.Client) {
 	}
 }
 
+// TODO: Move this to the game object
 func saveNAnswered(redis *redis.Client, lobby string) int {
 	n_answered := answered + lobby
 	tmp, err := redis.Get(ctx, n_answered).Result()
 	if err != nil {
-		log.Println("This is a new lobby! Init answer count.")
 		err = redis.Set(ctx, n_answered, 0, 1*time.Hour).Err()
 		if err != nil {
 			log.Println("Writing n_answered: ", err)
@@ -250,7 +249,7 @@ func saveNAnswered(redis *redis.Client, lobby string) int {
 }
 
 func readQuestion(redis *redis.Client, lobby string) question {
-	tmp, err := redis.Get(ctx, lobby).Result()
+	tmp, err := redis.Get(ctx, Questions).Result()
 	if err != nil {
 		log.Println("Reading questions", err)
 	}
@@ -262,17 +261,10 @@ func readQuestion(redis *redis.Client, lobby string) question {
 		log.Println("Unmarshal err: ", err)
 	}
 
-	curr_question_string, err := redis.Get(ctx, curr_question_key).Result()
-	if err != nil {
-		log.Println("We can't find them")
-	}
+	fmt.Println("Player lobby: ", lobby)
+	fmt.Println("Player curr question: ", lobbies[lobby].curr_question)
 
-	curr_question, err := strconv.Atoi(curr_question_string)
-	if err != nil {
-		log.Println("Converting n_answered: ", err)
-	}
-
-	return options[curr_question]
+	return options[lobbies[lobby].curr_question]
 }
 
 func checkAnswer(answerColor string, redis *redis.Client, answer string, curr_player Player) {
@@ -301,7 +293,7 @@ func checkAnswer(answerColor string, redis *redis.Client, answer string, curr_pl
 		return
 	}
 
-	err = tmpl.ExecuteTemplate(&ans_button, answerColor, readQuestion(redis, Questions))
+	err = tmpl.ExecuteTemplate(&ans_button, answerColor, readQuestion(redis, curr_player.Lobby))
 	if err != nil {
 		log.Println("Can't read question for player", err)
 	}
@@ -311,17 +303,6 @@ func checkAnswer(answerColor string, redis *redis.Client, answer string, curr_pl
 	if err := curr_player.conn.WriteMessage(websocket.TextMessage, []byte(grayButton)); err != nil {
 		log.Println("I can't gray the button for a player", err)
 		return
-	}
-
-	curr_question_string, err := redis.Get(ctx, curr_question_key).Result()
-	if err != nil {
-		log.Println("Can't load the index of current question; player method")
-	}
-
-	curr_question, err := strconv.Atoi(curr_question_string)
-	if err != nil {
-		_, file, line, _ := runtime.Caller(1)
-		log.Fatalf("Not a numba %s:%d - %v", file, line, err)
 	}
 
 	var questions []question
@@ -336,12 +317,10 @@ func checkAnswer(answerColor string, redis *redis.Client, answer string, curr_pl
 		log.Println("Can't unmarshal them data")
 	}
 
-	if questions[curr_question].Correct == answer {
+	if questions[lobbies[curr_player.Lobby].curr_question].Correct == answer {
 		updatePlayerScore(curr_player, redis)
 	}
 
-	fmt.Println("Count: ", answer_count)
-	fmt.Println("Players: ", lobbies[curr_player.Lobby].players)
 	if answer_count == len(lobbies[curr_player.Lobby].players) {
 		LeaderBoard(redis, curr_player.Lobby)
 	}

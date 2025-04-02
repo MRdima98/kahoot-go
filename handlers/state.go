@@ -15,7 +15,6 @@ const (
 	disconnected       = "disconnected"
 	no_answer          = ""
 	Questions          = "questions"
-	curr_question_key  = "curr_question"
 	base_score         = 0
 	right_answer       = 100
 	sara               = "Sara"
@@ -30,8 +29,10 @@ var upgrader = websocket.Upgrader{
 var ctx = context.Background()
 
 type Game struct {
-	master  *websocket.Conn
-	players map[string]Player
+	master        *websocket.Conn
+	players       map[string]Player
+	curr_question int
+	answered      int
 }
 
 // TODO: At this point I think we just cram everything inside the lobbies, and
@@ -48,3 +49,8 @@ func RedisClient() *redis.Client {
 
 	return rdb
 }
+
+// if err != nil {
+// 	_, file, line, _ := runtime.Caller(1)
+// 	log.Fatalf("Not a numba %s:%d - %v", file, line, err)
+// }

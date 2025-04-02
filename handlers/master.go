@@ -86,7 +86,7 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 
-	fmt.Println("Lobby! : ", lobbies)
+	// fmt.Println("Lobby! : ", lobbies)
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -136,13 +136,13 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 	}
 
 	refresh_lobby(redis, lobby)
-	var tpl bytes.Buffer
-	err = tmpl.Execute(&tpl, lobbies[lobby].players)
+	var leaderboard bytes.Buffer
+	err = tmpl.Execute(&leaderboard, lobbies[lobby].players)
 	if err != nil {
 		log.Printf("template execution: %s", err)
 	}
 
-	if err := lobbies[lobby].master.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+	if err := lobbies[lobby].master.WriteMessage(websocket.TextMessage, leaderboard.Bytes()); err != nil {
 		log.Println(err)
 		return
 	}
@@ -176,41 +176,32 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 		log.Println("Converting n_answered: ", err)
 	}
 
-	curr_question_string, err := redis.Get(context.Background(), curr_question_key).Result()
-	if err != nil {
-		log.Println("We can't find them")
+	if entry, ok := lobbies[lobby]; ok {
+		entry.curr_question++
+		lobbies[lobby] = entry
 	}
 
-	// TODO: your current question should be based on your current game, otherwise there are problems
-	curr_question, err := strconv.Atoi(curr_question_string)
-	if err != nil {
-		log.Println("Converting n_answered: ", err)
-	}
+	fmt.Println("Master lobby: ", lobby)
+	fmt.Println("Master curr question: ", lobbies[lobby].curr_question)
 
-	curr_question++
-	err = redis.Set(context.Background(), curr_question_key, curr_question, 0).Err()
-	if err != nil {
-		log.Println("Can't check which quest", err)
-	}
-
-	if curr_question == len(questions) {
+	if lobbies[lobby].curr_question == len(questions) {
 		return
 	}
 
-	err = gameTmpl.ExecuteTemplate(&tpl, "body", struct {
+	err = gameTmpl.ExecuteTemplate(&leaderboard, "body", struct {
 		Path     string
 		Answered int
 		Current  question
 	}{
 		URL,
 		Answered,
-		questions[curr_question],
+		questions[lobbies[lobby].curr_question],
 	})
 	if err != nil {
 		log.Printf("template execution: %s", err)
 	}
 
-	if err := lobbies[lobby].master.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+	if err := lobbies[lobby].master.WriteMessage(websocket.TextMessage, leaderboard.Bytes()); err != nil {
 		log.Println(err)
 		return
 	}
@@ -220,14 +211,14 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 		log.Println(err)
 	}
 
-	tpl.Reset()
-	err = tmpl.Execute(&tpl, readQuestion(redis, Questions))
+	leaderboard.Reset()
+	err = tmpl.Execute(&leaderboard, readQuestion(redis, lobby))
 	if err != nil {
 		log.Printf("template execution: %s", err)
 	}
 
 	for _, pl := range lobbies[lobby].players {
-		if err := pl.conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+		if err := pl.conn.WriteMessage(websocket.TextMessage, leaderboard.Bytes()); err != nil {
 			log.Println(err)
 			return
 		}
@@ -240,7 +231,7 @@ func refresh_lobby(redis *redis.Client, lobby string) {
 		var player Player
 		data, err := redis.Get(ctx, pl.Name).Result()
 		if err != nil {
-			log.Println("Can't read")
+			log.Printf("Can't find player: %s", err)
 		}
 
 		err = json.Unmarshal([]byte(data), &player)
@@ -283,12 +274,10 @@ func loadFirstQuestion(lobby string) {
 
 	redis = RedisClient()
 
-	err = redis.Set(context.Background(), curr_question_key, 0, 0).Err()
-	if err != nil {
-		log.Println("Can't check which quest", err)
+	if entry, ok := lobbies[lobby]; ok {
+		entry.curr_question = 0
+		lobbies[lobby] = entry
 	}
-
-	curr_question := 0
 
 	var game_start bytes.Buffer
 	err = gameTmpl.ExecuteTemplate(&game_start, "body", struct {
@@ -296,7 +285,7 @@ func loadFirstQuestion(lobby string) {
 		Current  question
 	}{
 		Answered,
-		questions[curr_question],
+		questions[lobbies[lobby].curr_question],
 	})
 
 	if err := lobbies[lobby].master.WriteMessage(websocket.TextMessage, game_start.Bytes()); err != nil {
