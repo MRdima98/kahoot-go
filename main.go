@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"kahoot/handlers"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
 	"text/template"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -49,7 +51,6 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/lobby", lobbyHandler)
-	// http.HandleFunc("/game", handlers.GameHandler)
 	http.HandleFunc("/player", playerHandler)
 	http.HandleFunc("/socket", handlers.PlayerHandler)
 	http.HandleFunc("/questions", handlers.GameMasterSocketHandler)
@@ -104,7 +105,39 @@ func playerHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func lobbyHandler(w http.ResponseWriter, r *http.Request) {
-	err := tmpl.ExecuteTemplate(w, lobby, struct {
+	_, err := r.Cookie("lobby_name")
+	restart_game := r.Method == http.MethodPost
+	lobby_code := genRandomLobby()
+	if err != nil || restart_game {
+		fmt.Println("No cookie in lobby", err)
+		socketCookie := http.Cookie{
+			Name:     "lobby_name",
+			Value:    lobby_code,
+			Path:     "/questions",
+			MaxAge:   3600,
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteLaxMode,
+		}
+		lobbyCookie := socketCookie
+		lobbyCookie.Path = "/lobby"
+		http.SetCookie(w, &lobbyCookie)
+		http.SetCookie(w, &socketCookie)
+	}
+
+	if restart_game {
+		err = tmpl.ExecuteTemplate(w, "lobby_code", struct {
+			Lobby string
+		}{
+			lobby_code,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, lobby, struct {
 		Path  string
 		Link  string
 		Lobby string
@@ -116,4 +149,19 @@ func lobbyHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+// TODO: You should check if the code is already in use
+func genRandomLobby() string {
+	const alfanumeric = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	lobby := ""
+	const max_range = len(alfanumeric)
+
+	for range 4 {
+		rand.New(rand.NewSource(time.Now().Unix()))
+		i := rand.Intn(max_range)
+		lobby = lobby + string(alfanumeric[i])
+	}
+
+	return lobby
 }

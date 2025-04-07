@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"strconv"
 	"text/template"
@@ -46,8 +45,18 @@ type question struct {
 
 // TODO: the master should really not reset on reload, rather keep same lobby
 // unless you click "start new game"
+// This boils down to check if I have a cookie, if not create one
+// For security reasons I should definitely encode them
 func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("\nGame master in the house!")
+	lobby := "default value"
+	cookie, err := r.Cookie("lobby_name")
+	if err != nil {
+		log.Printf("%s \"Lobby name\"", err)
+	} else {
+		lobby = cookie.Value
+	}
+
+	log.Printf("Game master in the house! %s", lobby)
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -55,7 +64,6 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	redis := RedisClient()
-	lobby := genRandomLobby()
 	lobbyHTML := `<strong id="lobby" hx-swap-oob="outerHTML"> %s </strong>`
 	lobby_inputHTML := `<input id="lobby-input" type="text" name="lobby" value="%s" hidden />`
 	lobbyHTML = fmt.Sprintf(lobbyHTML, lobby)
@@ -71,6 +79,8 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// fmt.Println(lobbies)
+
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(lobbyHTML)); err != nil {
 		log.Println(err)
 		return
@@ -82,11 +92,9 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	conn.SetCloseHandler(func(code int, text string) error {
-		delete(lobbies, lobby)
+		// delete(lobbies, lobby)
 		return nil
 	})
-
-	// fmt.Println("Lobby! : ", lobbies)
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -111,21 +119,6 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 			loadFirstQuestion(result["lobby"].(string))
 		}
 	}
-}
-
-// TODO: You should check if the code is already in use
-func genRandomLobby() string {
-	const alfanumeric = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	lobby := ""
-	const max_range = len(alfanumeric)
-
-	for range 4 {
-		rand.New(rand.NewSource(time.Now().Unix()))
-		i := rand.Intn(max_range)
-		lobby = lobby + string(alfanumeric[i])
-	}
-
-	return lobby
 }
 
 // TODO: Leaderboard should be refactored
