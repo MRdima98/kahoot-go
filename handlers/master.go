@@ -43,10 +43,7 @@ type question struct {
 	Pic     string `json:"path"`
 }
 
-// TODO: the master should really not reset on reload, rather keep same lobby
-// unless you click "start new game"
-// This boils down to check if I have a cookie, if not create one
-// For security reasons I should definitely encode them
+// TODO: when refreshed if the lobby exists I should get the current question
 func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 	lobby := "default value"
 	cookie, err := r.Cookie("lobby_name")
@@ -64,10 +61,10 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	redis := RedisClient()
-	lobbyHTML := `<strong id="lobby" hx-swap-oob="outerHTML"> %s </strong>`
-	lobby_inputHTML := `<input id="lobby-input" type="text" name="lobby" value="%s" hidden />`
-	lobbyHTML = fmt.Sprintf(lobbyHTML, lobby)
-	lobby_inputHTML = fmt.Sprintf(lobby_inputHTML, lobby)
+	lobby_HTML := `<strong id="lobby" hx-swap-oob="outerHTML"> %s </strong>`
+	lobby_input_HTML := `<input id="lobby-input" type="text" name="lobby" value="%s" hidden />`
+	lobby_HTML = fmt.Sprintf(lobby_HTML, lobby)
+	lobby_input_HTML = fmt.Sprintf(lobby_input_HTML, lobby)
 
 	if entry, ok := lobbies[lobby]; ok {
 		entry.master = conn
@@ -81,12 +78,12 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 
 	// fmt.Println(lobbies)
 
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(lobbyHTML)); err != nil {
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(lobby_HTML)); err != nil {
 		log.Println(err)
 		return
 	}
 
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(lobby_inputHTML)); err != nil {
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(lobby_input_HTML)); err != nil {
 		log.Println(err)
 		return
 	}
@@ -106,23 +103,36 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 		var result map[string]any
 		err = json.Unmarshal(message, &result)
 		if err != nil {
-			log.Println("Error unmarshaling JSON in for loop get:", err)
-			return
+			log.Println("Can't parse input", err)
 		}
 
 		if result["timeout"] != nil {
+			// TODO: split this function into two, so that it is evident
+			// that we are loading the leader board and THEN we load question
+			// eg.
+			// leaderBoard()
+			// loadQuestion()
 			LeaderBoard(redis, result["lobby"].(string))
 		}
 
 		if result["start-game"] != nil {
 			fmt.Println("Lobbies: ", lobbies)
-			loadFirstQuestion(result["lobby"].(string))
+			loadQuestion(result["lobby"].(string))
+		}
+
+		if result["refresh-lobby"] != nil {
+			lobby := result["lobby-input-refresh"].(string)
+			lobbies[lobby] = Game{
+				master:  conn,
+				players: make(map[string]Player),
+			}
+			log.Println("refreshed", lobbies)
 		}
 	}
 }
 
-// TODO: Leaderboard should be refactored
 func LeaderBoard(redis *redis.Client, lobby string) {
+	log.Println("leadearboarding")
 	tmpl, err := template.ParseFiles(leaderBoardPath)
 	if err != nil {
 		log.Println(err)
@@ -240,36 +250,18 @@ func refresh_lobby(redis *redis.Client, lobby string) {
 	}
 }
 
-func loadFirstQuestion(lobby string) {
+func loadQuestion(lobby string) {
 	redis := RedisClient()
 	var questions []question
 
-	data, err := redis.Get(context.Background(), Questions).Result()
+	rawQuestions, err := redis.Get(context.Background(), Questions).Result()
 	if err != nil {
 		log.Println("We can't find them")
 	}
 
-	err = json.Unmarshal([]byte(data), &questions)
+	err = json.Unmarshal([]byte(rawQuestions), &questions)
 	if err != nil {
 		log.Println("Can't unmarshal them data")
-	}
-
-	// TODO: Move counter to game object
-	data, err = redis.Get(context.Background(), answered+lobby).Result()
-	if err != nil {
-		log.Println("We can't count")
-	}
-
-	Answered, err = strconv.Atoi(data)
-	if err != nil {
-		log.Println("Converting n_answered: ", err)
-	}
-
-	redis = RedisClient()
-
-	if entry, ok := lobbies[lobby]; ok {
-		entry.curr_question = 0
-		lobbies[lobby] = entry
 	}
 
 	var game_start bytes.Buffer
@@ -277,7 +269,7 @@ func loadFirstQuestion(lobby string) {
 		Answered int
 		Current  question
 	}{
-		Answered,
+		lobbies[lobby].answered,
 		questions[lobbies[lobby].curr_question],
 	})
 

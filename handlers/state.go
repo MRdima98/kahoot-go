@@ -7,7 +7,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// TODO: just move stuff to the player
 const (
 	playerControlsPath = "templates/playerControls.html"
 	flashCardPath      = "templates/flashcard.html"
@@ -16,6 +15,7 @@ const (
 	no_answer          = ""
 	Questions          = "questions"
 	base_score         = 0
+	first_question     = 0
 	right_answer       = 100
 	sara               = "Sara"
 	answered           = "answered"

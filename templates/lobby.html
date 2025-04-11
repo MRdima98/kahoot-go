@@ -23,13 +23,33 @@
                         Sara
                     </button>
                 </form>
+                <form>
+                    <input id="lobby-input-refresh" type="text" name="lobby" value="{{ .Lobby }}" hidden />
+                    <input type="text" name="refresh-lobby" value="refresh-lobby" hidden />
+                    <button id="refresh-lobby" ws-send hx-post="/questions">
+                        asdf
+                    </button>
+                </form>
             </main>
         </div>
     </div>
-    <button hx-post="/lobby" hx-swap="outerHTML" hx-ext="debug" hx-target="#lobby"
+    <button hx-post="/lobby" hx-swap="outerHTML" hx-target="#lobby"
         class="border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold px-4 py-2 rounded-lg transition duration-300 ease-in-out absolute top-26 right-50">
         New game
     </button>
+    <script>
+        htmx.on("htmx:afterSwap", function (evt) {
+            // document.location.reload();
+            let refreshLobby = document.getElementById("refresh-lobby");
+            let lobby = document.getElementById("lobby-input");
+            let old = document.getElementById("lobby-input-refresh");
+            old.value = lobby.value;
+            old.setAttribute('value', lobby.value)
+            console.log(lobby)
+            console.log(old)
+            refreshLobby.click()
+        });
+    </script>
 </div>
 
 
