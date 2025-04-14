@@ -23,8 +23,6 @@ const (
 	leaderBoardTemplate = "leaderBoard.html"
 	leaderBoardPath     = "templates/leaderBoard.html"
 	gamePath            = "templates/game.html"
-	headPath            = "templates/head.html"
-	footerPath          = "templates/footer.html"
 )
 
 var gameTmpl = template.Must(

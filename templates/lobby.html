@@ -15,6 +15,7 @@
                     or use this QR code
                     <img src="static/svgs/sara-qr.svg" width="100" height="100" />
                 </span>
+                <!-- TODO: Move this logic into the socket events dummy -->
                 <form>
                     <input id="lobby-input" type="text" name="lobby" value="{{ .Lobby }}" hidden />
                     <input type="text" name="start-game" value="start-game" hidden />
@@ -38,6 +39,7 @@
         New game
     </button>
     <script>
+        // TODO: the socket must be reloaded after makeing new lobby
         htmx.on("htmx:afterSwap", function (evt) {
             // document.location.reload();
             let refreshLobby = document.getElementById("refresh-lobby");

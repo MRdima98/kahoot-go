@@ -22,18 +22,29 @@
             </button>
         </form>
     </div>
-    <form hidden>
-        <button id="player" ws-send hx-post="/questions">
-            <input type="text" name="player" value="player" />
-        </button>
-    </form>
-
-
     <script>
-        document.addEventListener("htmx:wsOpen", function () {
-            /** @type {HTMLButtonElement} */
-            const player = document.getElementById("player");
-            player.click();
+        document.addEventListener("htmx:wsBeforeMessage", async function () {
+            const name = document.getElementsByName("name")[0].value
+            const lobby = document.getElementsByName("lobby")[0].value
+            console.log(name, lobby)
+
+            await cookieStore.set({
+                name: "player_code",
+                value: name,
+                expires: Date.now() + 1000 * 60 * 60 * 24,
+                path: "/",
+                sameSite: "lax",
+                secure: true
+            });
+
+            await cookieStore.set({
+                name: "lobby_name",
+                value: lobby,
+                expires: Date.now() + 1000 * 60 * 60 * 24,
+                path: "/",
+                sameSite: "lax",
+                secure: true
+            });
         });
     </script>
 </div>

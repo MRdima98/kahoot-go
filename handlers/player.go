@@ -17,10 +17,12 @@ import (
 )
 
 const (
-	doesnt_expire = 0
-	invalid       = true
-	valid         = false
-	empty_name    = ""
+	doesnt_expire  = 0
+	invalid        = true
+	valid          = false
+	empty_name     = ""
+	playerMenu     = "playerMenu.html"
+	playerMenuPath = "templates/playerMenu.html"
 )
 
 type Player struct {
@@ -46,9 +48,49 @@ var colors = map[string]string{
 	"yellow_answer": "bg-kahootYellow",
 }
 
-// TODO: Players should not have to type again to reconnect on reload, I will
-// take care with cookies or mc address
 func PlayerHandler(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	sara := false
+	// lobby_code, err := r.Cookie("lobby_name")
+	// if err != nil {
+	// 	log.Printf("Reading player cookie: %s", err)
+	// }
+	//
+	// _, err = r.Cookie("player_code")
+	// if err != nil {
+	// 	log.Printf("Reading player cookie: %s", err)
+	// 	setPlayerCookie(GenRandomKey(), lobby_code.Value, w)
+	// }
+
+	for _, values := range queryParams {
+		for _, el := range values {
+			if el == "Sara" {
+				sara = true
+			}
+		}
+	}
+
+	tmpl, err := template.ParseFiles(playerMenuPath, headPath, footerPath)
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = tmpl.ExecuteTemplate(w, playerMenu, struct {
+		Path string
+		Sara bool
+	}{
+		r.URL.Path,
+		sara,
+	})
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// TODO: Players should not have to type again to reconnect on reload, I will
+// take care with cookies
+func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("\n\nOpened PLAYER connection!")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -102,6 +144,19 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 			lobby := result["lobby"].(string)
 			name := result["name"].(string)
 
+			lobby_code, err := r.Cookie("lobby_name")
+			if err != nil {
+				log.Printf("Reading player cookie: %s", err)
+			}
+
+			player_code, err := r.Cookie("player_code")
+			if err != nil {
+				log.Printf("Reading player cookie: %s", err)
+			}
+			log.Printf("Lobby cookie '%s' and player cookie '%s'", lobby_code, player_code)
+
+			// setPlayerCookie(lobby, name, w)
+
 			if invalidName(conn, name) {
 				continue
 			}
@@ -128,7 +183,7 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			var tpl bytes.Buffer
-			err = tmpl.Execute(&tpl, readQuestion(redis, curr_player.Lobby))
+			err = tmpl.Execute(&tpl, readQuestion(redis, lobby))
 			if err != nil {
 				log.Printf("template execution: %s", err)
 			}
@@ -139,6 +194,24 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
+
+func setPlayerCookie(lobby, name string, w http.ResponseWriter) {
+	log.Println("setting player cookier")
+	playerCookie := http.Cookie{
+		Name:     "player_cookie",
+		Value:    lobby,
+		Path:     "/player",
+		MaxAge:   3600,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	lobbyCookie := playerCookie
+	lobbyCookie.Value = lobby
+	http.SetCookie(w, &lobbyCookie)
+	http.SetCookie(w, &playerCookie)
 }
 
 func savePlayer(new_player Player) {
