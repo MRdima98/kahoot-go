@@ -1,39 +1,7 @@
 {{ template "head.html" .}}
 <div hx-ext="ws" ws-connect="/questions" class="w-screen h-screen flex justify-center items-center relative">
-    <div id="body" hx-swap-oob="innerHTML" class="bg-gray-200 p-6 w-4/5 h-4/5 text-5xl">
-        <div class="h-full w-full flex justify-center items-center overflow-hidden">
-            <main
-                class="bg-gray-400 text-white flex flex-col gap-10 justify-center items-center self-center h-screen w-10/12">
-                <span>Join on the link <strong class="text-yellow-400"> {{ .Link }} </strong></span>
-                <span>type in this code:
-                    {{ define "lobby_code" }}
-                    <strong id="lobby" hx-swap-oob="outerHTML"> {{ .Lobby }} </strong>
-                    {{ end }}
-                    {{ template "lobby_code" . }}
-                </span>
-                <span class="flex items-center">
-                    or use this QR code
-                    <img src="static/svgs/sara-qr.svg" width="100" height="100" />
-                </span>
-                <!-- TODO: Move this logic into the socket events dummy -->
-                <form>
-                    <input id="lobby-input" type="text" name="lobby" value="{{ .Lobby }}" hidden />
-                    <input type="text" name="start-game" value="start-game" hidden />
-                    <button ws-send hx-post="/questions"
-                        class="border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold px-4 py-2 rounded-lg transition duration-300 ease-in-out">
-                        Sara
-                    </button>
-                </form>
-                <form>
-                    <input id="lobby-input-refresh" type="text" name="lobby" value="{{ .Lobby }}" hidden />
-                    <input type="text" name="refresh-lobby" value="refresh-lobby" hidden />
-                    <button id="refresh-lobby" ws-send hx-post="/questions">
-                        asdf
-                    </button>
-                </form>
-            </main>
-        </div>
-    </div>
+    {{ template "questionInterface.html" .}}
+
     <button hx-post="/lobby" hx-swap="outerHTML" hx-target="#lobby"
         class="border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold px-4 py-2 rounded-lg transition duration-300 ease-in-out absolute top-26 right-50">
         New game

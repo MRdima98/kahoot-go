@@ -21,7 +21,6 @@ var URL string
 const (
 	game                = "game.html"
 	leaderBoardTemplate = "leaderBoard.html"
-	leaderBoardPath     = "templates/leaderBoard.html"
 	gamePath            = "templates/game.html"
 )
 
@@ -39,6 +38,71 @@ type question struct {
 	Ans4    string `json:"answer4"`
 	Correct string `json:"correct"`
 	Pic     string `json:"path"`
+}
+
+// TODO: turns out I load the questions from somewhere else, skill issue.
+// I should move the "body" which is inside game somewhere else and organize
+// that code better
+func LobbyHandler(w http.ResponseWriter, r *http.Request) {
+	lobby_cache, err := r.Cookie("lobby_name")
+	restart_game := r.Method == http.MethodPost
+	lobby_code := GenRandomKey()
+	if err != nil || restart_game {
+		fmt.Println("No cookie in lobby", err)
+		socketCookie := http.Cookie{
+			Name:     "lobby_name",
+			Value:    lobby_code,
+			Path:     "/questions",
+			MaxAge:   3600,
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteLaxMode,
+		}
+		lobbyCookie := socketCookie
+		playerCookie := socketCookie
+		lobbyCookie.Path = "/lobby"
+		playerCookie.Path = "/player"
+		http.SetCookie(w, &lobbyCookie)
+		http.SetCookie(w, &socketCookie)
+		http.SetCookie(w, &playerCookie)
+	}
+
+	tmpl, err := template.ParseFiles(
+		gamePath, footerPath, headPath, lobbyPath, questionInterfacePath,
+		leaderBoardPath,
+	)
+
+	if restart_game {
+		err = tmpl.ExecuteTemplate(w, "lobby_code", struct {
+			Lobby  string
+			Cached bool
+		}{
+			lobby_code,
+			lobby_cache != nil,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+	log.Println(lobbies)
+
+	err = tmpl.ExecuteTemplate(w, lobby, struct {
+		Path    string
+		Link    string
+		Lobby   string
+		Cached  bool
+		Players map[string]Player
+	}{
+		r.URL.Path,
+		"quizaara.mrdima98.dev/player",
+		"",
+		lobby_cache != nil,
+		lobbies[lobby].players,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // TODO: when refreshed if the lobby exists I should get the current question
@@ -130,7 +194,6 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LeaderBoard(redis *redis.Client, lobby string) {
-	log.Println("leadearboarding")
 	tmpl, err := template.ParseFiles(leaderBoardPath)
 	if err != nil {
 		log.Println(err)
@@ -138,7 +201,11 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 
 	refresh_lobby(redis, lobby)
 	var leaderboard bytes.Buffer
-	err = tmpl.Execute(&leaderboard, lobbies[lobby].players)
+	err = tmpl.Execute(&leaderboard, struct {
+		Players map[string]Player
+	}{
+		lobbies[lobby].players,
+	})
 	if err != nil {
 		log.Printf("template execution: %s", err)
 	}

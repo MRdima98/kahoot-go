@@ -60,7 +60,9 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tmpl, err := template.ParseFiles(playerMenuPath, headPath, footerPath, playerFormPath, playerControlsPath)
+	tmpl, err := template.ParseFiles(
+		playerMenuPath, headPath, footerPath, playerFormPath, playerControlsPath,
+	)
 	if err != nil {
 		log.Println(err)
 	}
@@ -84,7 +86,6 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TODO:
 func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("\n\nOpened PLAYER connection!")
 

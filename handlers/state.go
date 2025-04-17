@@ -10,20 +10,24 @@ import (
 )
 
 const (
-	playerControlsPath = "templates/playerControls.html"
-	flashCardPath      = "templates/flashcard.html"
-	connected          = "connected"
-	disconnected       = "disconnected"
-	no_answer          = ""
-	Questions          = "questions"
-	base_score         = 0
-	first_question     = 0
-	right_answer       = 100
-	sara               = "Sara"
-	answered           = "answered"
-	headPath           = "templates/head.html"
-	footerPath         = "templates/footer.html"
-	playerFormPath     = "templates/playerForm.html"
+	playerControlsPath    = "templates/playerControls.html"
+	flashCardPath         = "templates/flashcard.html"
+	connected             = "connected"
+	disconnected          = "disconnected"
+	no_answer             = ""
+	Questions             = "questions"
+	base_score            = 0
+	first_question        = 0
+	right_answer          = 100
+	sara                  = "Sara"
+	answered              = "answered"
+	headPath              = "templates/head.html"
+	footerPath            = "templates/footer.html"
+	playerFormPath        = "templates/playerForm.html"
+	lobbyPath             = "templates/lobby.html"
+	questionInterfacePath = "templates/questionInterface.html"
+	lobby                 = "lobby.html"
+	leaderBoardPath       = "templates/leaderBoard.html"
 )
 
 var upgrader = websocket.Upgrader{
