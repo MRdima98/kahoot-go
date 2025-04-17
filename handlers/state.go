@@ -23,6 +23,7 @@ const (
 	answered           = "answered"
 	headPath           = "templates/head.html"
 	footerPath         = "templates/footer.html"
+	playerFormPath     = "templates/playerForm.html"
 )
 
 var upgrader = websocket.Upgrader{

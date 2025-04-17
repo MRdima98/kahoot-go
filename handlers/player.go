@@ -51,16 +51,6 @@ var colors = map[string]string{
 func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	sara := false
-	// lobby_code, err := r.Cookie("lobby_name")
-	// if err != nil {
-	// 	log.Printf("Reading player cookie: %s", err)
-	// }
-	//
-	// _, err = r.Cookie("player_code")
-	// if err != nil {
-	// 	log.Printf("Reading player cookie: %s", err)
-	// 	setPlayerCookie(GenRandomKey(), lobby_code.Value, w)
-	// }
 
 	for _, values := range queryParams {
 		for _, el := range values {
@@ -70,17 +60,23 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	tmpl, err := template.ParseFiles(playerMenuPath, headPath, footerPath)
+	tmpl, err := template.ParseFiles(playerMenuPath, headPath, footerPath, playerFormPath, playerControlsPath)
 	if err != nil {
 		log.Println(err)
 	}
 
+	lobby_name, err := r.Cookie("lobby_name")
+	player_name, err := r.Cookie("player_code")
+	player_cached := lobby_name != nil && player_name != nil
+
 	err = tmpl.ExecuteTemplate(w, playerMenu, struct {
-		Path string
-		Sara bool
+		Path   string
+		Sara   bool
+		Cached bool
 	}{
 		r.URL.Path,
 		sara,
+		player_cached,
 	})
 
 	if err != nil {
@@ -88,10 +84,10 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TODO: Players should not have to type again to reconnect on reload, I will
-// take care with cookies
+// TODO:
 func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("\n\nOpened PLAYER connection!")
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -101,6 +97,37 @@ func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl *template.Template
 	var curr_player Player
 	redis := RedisClient()
+	lobby_name, err := r.Cookie("lobby_name")
+	player_name, err := r.Cookie("player_code")
+	// TODO: Don't load then switch, load the controls directly
+	if lobby_name != nil && player_name != nil {
+		curr_player = Player{
+			Name:   player_name.Value,
+			Status: connected,
+			Answer: no_answer,
+			Score:  base_score,
+			Lobby:  lobby_name.Value,
+			conn:   conn,
+		}
+		savePlayerRedis(curr_player, redis)
+		savePlayer(curr_player)
+
+		tmpl, err = template.ParseFiles(playerControlsPath)
+		if err != nil {
+			log.Println(err)
+		}
+
+		var tpl bytes.Buffer
+		err = tmpl.Execute(&tpl, readQuestion(redis, curr_player.Lobby))
+		if err != nil {
+			log.Printf("template execution: %s", err)
+		}
+
+		if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
+			log.Println(err)
+			return
+		}
+	}
 
 	conn.SetCloseHandler(func(code int, text string) error {
 		if curr_player == (Player{}) {
@@ -294,7 +321,6 @@ func updatePlayerScore(player Player, redis *redis.Client) {
 	}
 }
 
-// TODO: Move this to the game object
 func saveNAnswered(redis *redis.Client, lobby string) int {
 	n_answered := answered + lobby
 	tmp, err := redis.Get(ctx, n_answered).Result()

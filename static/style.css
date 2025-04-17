@@ -532,9 +532,6 @@
   .right-50 {
     right: calc(var(--spacing) * 50);
   }
-  .m-8 {
-    margin: calc(var(--spacing) * 8);
-  }
   .m-10 {
     margin: calc(var(--spacing) * 10);
   }
@@ -607,9 +604,6 @@
   .table {
     display: table;
   }
-  .h-4 {
-    height: calc(var(--spacing) * 4);
-  }
   .h-4\/5 {
     height: calc(4/5 * 100%);
   }
@@ -633,9 +627,6 @@
   }
   .w-4\/5 {
     width: calc(4/5 * 100%);
-  }
-  .w-7 {
-    width: calc(var(--spacing) * 7);
   }
   .w-10 {
     width: calc(var(--spacing) * 10);
@@ -830,6 +821,9 @@
   .ease-in-out {
     --tw-ease: var(--ease-in-out);
     transition-timing-function: var(--ease-in-out);
+  }
+  .\[j\:\10 \12 ��\f w\] {
+    j: ��w;
   }
   .hover\:bg-blue-500 {
     &:hover {

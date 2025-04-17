@@ -6,22 +6,13 @@
         hidden>
         Give me a name buddy!
     </div>
-    <div id="UI" class="flex flex-col justify-center items-center h-96 text-white">
-        <form id="form" ws-send class="flex flex-col gap-1 justify-center items-center h-full w-full">
-            <span> Quizaara: Kahoot per Saretta</span>
-            <span class="mt-4"> Give me a name! </span>
-            <input class="border border-violet-400 rounded-lg" type="text" name="name" />
-            <span class="mt-4"> Which lobby? </span>
-            <input class="border border-violet-400 rounded-lg" type="text" name="lobby" />
-            {{ if .Sara }}
-            <span class="mt-4"> La password; vichingo! </span>
-            <input class="border border-violet-400 rounded-lg" type="text" name="pwd" />
-            {{ end }}
-            <button class="border border-blue-400 rounder-lg bg-blue-800">
-                La accendiamo?
-            </button>
-        </form>
-    </div>
+
+    {{ if .Cached}}
+    {{ template "playerControls.html"}}
+    {{ else }}
+    {{ template "playerForm.html"}}
+    {{end}}
+
     <script>
         document.addEventListener("htmx:wsBeforeMessage", async function () {
             const name = document.getElementsByName("name")[0].value
