@@ -69,7 +69,15 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 
 	lobby_name, err := r.Cookie("lobby_name")
 	player_name, err := r.Cookie("player_code")
-	player_cached := lobby_name != nil && player_name != nil
+	player_cached := false
+
+	if lobby_name != nil {
+		lobby, lobby_exist := lobbies[lobby]
+		if lobby_exist {
+			_, player_exist := lobby.players[player_name.Value]
+			player_cached = player_exist
+		}
+	}
 
 	err = tmpl.ExecuteTemplate(w, playerMenu, struct {
 		Path   string
@@ -229,7 +237,7 @@ func setPlayerCookie(lobby, name string, w http.ResponseWriter) {
 	playerCookie := http.Cookie{
 		Name:     "player_cookie",
 		Value:    lobby,
-		Path:     "/player",
+		Path:     "/",
 		MaxAge:   3600,
 		HttpOnly: true,
 		Secure:   true,

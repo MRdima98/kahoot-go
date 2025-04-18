@@ -48,37 +48,42 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 	restart_game := r.Method == http.MethodPost
 	lobby_code := GenRandomKey()
 	if err != nil || restart_game {
-		fmt.Println("No cookie in lobby", err)
-		socketCookie := http.Cookie{
+		cookie := http.Cookie{
 			Name:     "lobby_name",
 			Value:    lobby_code,
-			Path:     "/questions",
+			Path:     "/",
 			MaxAge:   3600,
 			HttpOnly: true,
 			Secure:   true,
 			SameSite: http.SameSiteLaxMode,
 		}
-		lobbyCookie := socketCookie
-		playerCookie := socketCookie
-		lobbyCookie.Path = "/lobby"
-		playerCookie.Path = "/player"
-		http.SetCookie(w, &lobbyCookie)
-		http.SetCookie(w, &socketCookie)
-		http.SetCookie(w, &playerCookie)
+		http.SetCookie(w, &cookie)
 	}
 
 	tmpl, err := template.ParseFiles(
 		gamePath, footerPath, headPath, lobbyPath, questionInterfacePath,
 		leaderBoardPath,
 	)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 
 	if restart_game {
-		err = tmpl.ExecuteTemplate(w, "lobby_code", struct {
-			Lobby  string
-			Cached bool
+		err = tmpl.ExecuteTemplate(w, lobby, struct {
+			Path      string
+			Link      string
+			Lobby     string
+			Cached    bool
+			Players   map[string]Player
+			Interface bool
 		}{
+			r.URL.Path,
+			"quizaara.mrdima98.dev/player",
 			lobby_code,
 			lobby_cache != nil,
+			lobbies[lobby].players,
+			true,
 		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -87,6 +92,7 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if lobby_cache != nil {
+		log.Println("overlap")
 		questions := getQuestion(lobby_cache.Value)
 		err = tmpl.ExecuteTemplate(w, lobby, struct {
 			Path         string
@@ -131,7 +137,6 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TODO: when refreshed if the lobby exists I should get the current question
 func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 	lobby := "default value"
 	cookie, err := r.Cookie("lobby_name")
@@ -210,6 +215,8 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 		// TODO: we also need to nuke this previous lobby, only save on redis the
 		// info and everything else should just be cleared
 		if result["refresh-lobby"] != nil {
+			log.Println("refresh")
+			delete(lobbies, lobby)
 			lobby := result["lobby-input-refresh"].(string)
 			lobbies[lobby] = Game{
 				master:  conn,
