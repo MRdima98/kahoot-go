@@ -38,10 +38,12 @@ var upgrader = websocket.Upgrader{
 var ctx = context.Background()
 
 type Game struct {
-	master        *websocket.Conn
-	players       map[string]Player
-	curr_question int
-	answered      int
+	master            *websocket.Conn
+	players           map[string]Player
+	curr_question     int
+	answered          int
+	game_started      bool
+	leaderboard_phase bool
 }
 
 // TODO: At this point I think we just cram everything inside the lobbies, and

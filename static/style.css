@@ -520,9 +520,6 @@
   .absolute {
     position: absolute;
   }
-  .fixed {
-    position: fixed;
-  }
   .relative {
     position: relative;
   }
@@ -534,9 +531,6 @@
   }
   .right-50 {
     right: calc(var(--spacing) * 50);
-  }
-  .z-2 {
-    z-index: 2;
   }
   .m-10 {
     margin: calc(var(--spacing) * 10);
@@ -765,9 +759,6 @@
   .p-4 {
     padding: calc(var(--spacing) * 4);
   }
-  .p-5 {
-    padding: calc(var(--spacing) * 5);
-  }
   .p-6 {
     padding: calc(var(--spacing) * 6);
   }
@@ -830,9 +821,6 @@
   .ease-in-out {
     --tw-ease: var(--ease-in-out);
     transition-timing-function: var(--ease-in-out);
-  }
-  .\[j\:\10 \12 ��\f w\] {
-    j: ��w;
   }
   .hover\:bg-blue-500 {
     &:hover {

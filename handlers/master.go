@@ -85,20 +85,46 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	log.Println(lobbies)
+
+	if lobby_cache != nil {
+		questions := getQuestion(lobby_cache.Value)
+		err = tmpl.ExecuteTemplate(w, lobby, struct {
+			Path         string
+			Lobby        string
+			LoadQuestion bool
+			Interface    bool
+			Players      map[string]Player
+			Current      question
+			Answered     int
+		}{
+			r.URL.Path,
+			lobby_cache.Value,
+			lobby_cache != nil,
+			false,
+			lobbies[lobby_cache.Value].players,
+			questions[lobbies[lobby_cache.Value].curr_question],
+			lobbies[lobby_cache.Value].answered,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
 
 	err = tmpl.ExecuteTemplate(w, lobby, struct {
-		Path    string
-		Link    string
-		Lobby   string
-		Cached  bool
-		Players map[string]Player
+		Path      string
+		Link      string
+		Lobby     string
+		Cached    bool
+		Players   map[string]Player
+		Interface bool
 	}{
 		r.URL.Path,
 		"quizaara.mrdima98.dev/player",
 		"",
 		lobby_cache != nil,
 		lobbies[lobby].players,
+		true,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -138,8 +164,6 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// fmt.Println(lobbies)
-
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(lobby_HTML)); err != nil {
 		log.Println(err)
 		return
@@ -169,19 +193,22 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if result["timeout"] != nil {
-			// TODO: split this function into two, so that it is evident
-			// that we are loading the leader board and THEN we load question
-			// eg.
-			// leaderBoard()
-			// loadQuestion()
 			LeaderBoard(redis, result["lobby"].(string))
 		}
 
 		if result["start-game"] != nil {
 			fmt.Println("Lobbies: ", lobbies)
-			loadQuestion(result["lobby"].(string))
+			lobby := result["lobby"].(string)
+			loadQuestion(lobby)
+
+			if entry, ok := lobbies[lobby]; ok {
+				entry.game_started = true
+				lobbies[lobby] = entry
+			}
 		}
 
+		// TODO: we also need to nuke this previous lobby, only save on redis the
+		// info and everything else should just be cleared
 		if result["refresh-lobby"] != nil {
 			lobby := result["lobby-input-refresh"].(string)
 			lobbies[lobby] = Game{
@@ -193,7 +220,19 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO: split this function into two, so that it is evident
+// that we are loading the leader board and THEN we load question
+// eg.
+// leaderBoard()
+// loadQuestion()
+// loadQuestion should take an input a seconds of timeout, default is 0
+// but and I decide when to wait more
 func LeaderBoard(redis *redis.Client, lobby string) {
+	if entry, ok := lobbies[lobby]; ok {
+		entry.leaderboard_phase = true
+		lobbies[lobby] = entry
+	}
+
 	tmpl, err := template.ParseFiles(leaderBoardPath)
 	if err != nil {
 		log.Println(err)
@@ -289,6 +328,10 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 		}
 	}
 
+	if entry, ok := lobbies[lobby]; ok {
+		entry.leaderboard_phase = false
+		lobbies[lobby] = entry
+	}
 }
 
 func refresh_lobby(redis *redis.Client, lobby string) {
@@ -342,4 +385,21 @@ func loadQuestion(lobby string) {
 		log.Println(err)
 		return
 	}
+}
+
+func getQuestion(lobby string) []question {
+	redis := RedisClient()
+	var questions []question
+
+	rawQuestions, err := redis.Get(context.Background(), Questions).Result()
+	if err != nil {
+		log.Println("We can't find them")
+	}
+
+	err = json.Unmarshal([]byte(rawQuestions), &questions)
+	if err != nil {
+		log.Println("Can't unmarshal them data")
+	}
+
+	return questions
 }
