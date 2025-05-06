@@ -44,10 +44,12 @@ type question struct {
 // I should move the "body" which is inside game somewhere else and organize
 // that code better
 func LobbyHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("hit")
 	lobby_cache, err := r.Cookie("lobby_name")
 	restart_game := r.Method == http.MethodPost
-	lobby_code := GenRandomKey()
+	var lobby_code string
 	if err != nil || restart_game {
+		lobby_code = GenRandomKey()
 		cookie := http.Cookie{
 			Name:     "lobby_name",
 			Value:    lobby_code,
@@ -58,6 +60,8 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 			SameSite: http.SameSiteLaxMode,
 		}
 		http.SetCookie(w, &cookie)
+	} else {
+		lobby_code = lobby_cache.Value
 	}
 
 	tmpl, err := template.ParseFiles(
@@ -69,68 +73,67 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	if restart_game {
-		err = tmpl.ExecuteTemplate(w, lobby, struct {
-			Path      string
-			Link      string
-			Lobby     string
-			Cached    bool
-			Players   map[string]Player
-			Interface bool
-		}{
-			r.URL.Path,
-			"quizaara.mrdima98.dev/player",
-			lobby_code,
-			lobby_cache != nil,
-			lobbies[lobby].players,
-			true,
-		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		return
-	}
+	// if restart_game {
+	// 	err = tmpl.ExecuteTemplate(w, lobby, struct {
+	// 		Path         string
+	// 		Link         string
+	// 		Lobby        string
+	// 		Cached       bool
+	// 		Players      map[string]Player
+	// 		Interface    bool
+	// 		LoadQuestion bool
+	// 	}{
+	// 		r.URL.Path,
+	// 		"quizaara.mrdima98.dev/player",
+	// 		lobby_code,
+	// 		lobby_cache != nil,
+	// 		lobbies[lobby].players,
+	// 		true,
+	// 		false,
+	// 	})
+	// 	if err != nil {
+	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	}
+	// 	return
+	// }
 
-	if lobby_cache != nil {
-		log.Println("overlap")
-		questions := getQuestion(lobby_cache.Value)
-		err = tmpl.ExecuteTemplate(w, lobby, struct {
-			Path         string
-			Lobby        string
-			LoadQuestion bool
-			Interface    bool
-			Players      map[string]Player
-			Current      question
-			Answered     int
-		}{
-			r.URL.Path,
-			lobby_cache.Value,
-			lobby_cache != nil,
-			false,
-			lobbies[lobby_cache.Value].players,
-			questions[lobbies[lobby_cache.Value].curr_question],
-			lobbies[lobby_cache.Value].answered,
-		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		return
-	}
+	// if lobby_cache != nil {
+	// 	questions := getQuestion(lobby_cache.Value)
+	//
+	// 	err = tmpl.ExecuteTemplate(w, lobby, struct {
+	// 		Path         string
+	// 		Lobby        string
+	// 		LoadQuestion bool
+	// 		Interface    bool
+	// 		Players      map[string]Player
+	// 		Current      question
+	// 		Answered     int
+	// 	}{
+	// 		r.URL.Path,
+	// 		lobby_cache.Value,
+	// 		lobby_cache != nil,
+	// 		false,
+	// 		lobbies[lobby_cache.Value].players,
+	// 		questions[lobbies[lobby_cache.Value].curr_question],
+	// 		lobbies[lobby_cache.Value].answered,
+	// 	})
+	// 	if err != nil {
+	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	}
+	// 	return
+	// }
 
+	fmt.Println("lobbies in lobby: ", lobbies)
 	err = tmpl.ExecuteTemplate(w, lobby, struct {
-		Path      string
-		Link      string
-		Lobby     string
-		Cached    bool
-		Players   map[string]Player
-		Interface bool
+		Path    string
+		Link    string
+		Lobby   string
+		Players map[string]Player
 	}{
 		r.URL.Path,
 		"quizaara.mrdima98.dev/player",
-		"",
-		lobby_cache != nil,
+		lobby_code,
 		lobbies[lobby].players,
-		true,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -154,10 +157,11 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	redis := RedisClient()
-	lobby_HTML := `<strong id="lobby" hx-swap-oob="outerHTML"> %s </strong>`
-	lobby_input_HTML := `<input id="lobby-input" type="text" name="lobby" value="%s" hidden />`
-	lobby_HTML = fmt.Sprintf(lobby_HTML, lobby)
-	lobby_input_HTML = fmt.Sprintf(lobby_input_HTML, lobby)
+
+	// lobby_HTML := `<strong id="lobby" hx-swap-oob="outerHTML" > %s </strong>`
+	// lobby_input_HTML := `<input id="lobby-input" type="text" name="lobby" value="%s" hidden />`
+	// lobby_HTML = fmt.Sprintf(lobby_HTML, lobby)
+	// lobby_input_HTML = fmt.Sprintf(lobby_input_HTML, lobby)
 
 	if entry, ok := lobbies[lobby]; ok {
 		entry.master = conn
@@ -169,15 +173,15 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(lobby_HTML)); err != nil {
-		log.Println(err)
-		return
-	}
-
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(lobby_input_HTML)); err != nil {
-		log.Println(err)
-		return
-	}
+	// if err := conn.WriteMessage(websocket.TextMessage, []byte(lobby_HTML)); err != nil {
+	// 	log.Println(err)
+	// 	return
+	// }
+	//
+	// if err := conn.WriteMessage(websocket.TextMessage, []byte(lobby_input_HTML)); err != nil {
+	// 	log.Println(err)
+	// 	return
+	// }
 
 	conn.SetCloseHandler(func(code int, text string) error {
 		// delete(lobbies, lobby)
@@ -204,6 +208,7 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 		if result["start-game"] != nil {
 			fmt.Println("Lobbies: ", lobbies)
 			lobby := result["lobby"].(string)
+			fmt.Println("single lobby: ", lobby)
 			loadQuestion(lobby)
 
 			if entry, ok := lobbies[lobby]; ok {
