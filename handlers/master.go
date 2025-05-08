@@ -44,7 +44,6 @@ type question struct {
 // I should move the "body" which is inside game somewhere else and organize
 // that code better
 func LobbyHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("hit")
 	lobby_cache, err := r.Cookie("lobby_name")
 	restart_game := r.Method == http.MethodPost
 	var lobby_code string
@@ -60,6 +59,7 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 			SameSite: http.SameSiteLaxMode,
 		}
 		http.SetCookie(w, &cookie)
+		restart_game = true
 	} else {
 		lobby_code = lobby_cache.Value
 	}
@@ -73,67 +73,29 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	// if restart_game {
-	// 	err = tmpl.ExecuteTemplate(w, lobby, struct {
-	// 		Path         string
-	// 		Link         string
-	// 		Lobby        string
-	// 		Cached       bool
-	// 		Players      map[string]Player
-	// 		Interface    bool
-	// 		LoadQuestion bool
-	// 	}{
-	// 		r.URL.Path,
-	// 		"quizaara.mrdima98.dev/player",
-	// 		lobby_code,
-	// 		lobby_cache != nil,
-	// 		lobbies[lobby].players,
-	// 		true,
-	// 		false,
-	// 	})
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	}
-	// 	return
-	// }
+	page_to_render := lobby
+	if restart_game {
+		page_to_render = "partialLobby"
+	}
 
-	// if lobby_cache != nil {
-	// 	questions := getQuestion(lobby_cache.Value)
-	//
-	// 	err = tmpl.ExecuteTemplate(w, lobby, struct {
-	// 		Path         string
-	// 		Lobby        string
-	// 		LoadQuestion bool
-	// 		Interface    bool
-	// 		Players      map[string]Player
-	// 		Current      question
-	// 		Answered     int
-	// 	}{
-	// 		r.URL.Path,
-	// 		lobby_cache.Value,
-	// 		lobby_cache != nil,
-	// 		false,
-	// 		lobbies[lobby_cache.Value].players,
-	// 		questions[lobbies[lobby_cache.Value].curr_question],
-	// 		lobbies[lobby_cache.Value].answered,
-	// 	})
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	}
-	// 	return
-	// }
-
-	fmt.Println("lobbies in lobby: ", lobbies)
-	err = tmpl.ExecuteTemplate(w, lobby, struct {
-		Path    string
-		Link    string
-		Lobby   string
-		Players map[string]Player
+	fmt.Println("Restart: %s", restart_game)
+	questions := getQuestion(lobby_code)
+	err = tmpl.ExecuteTemplate(w, page_to_render, struct {
+		Path        string
+		Link        string
+		Lobby       string
+		Players     map[string]Player
+		RestartGame bool
+		Current     question
+		Answered    int
 	}{
 		r.URL.Path,
 		"quizaara.mrdima98.dev/player",
 		lobby_code,
 		lobbies[lobby].players,
+		restart_game,
+		questions[lobbies[lobby_code].curr_question],
+		Answered,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
