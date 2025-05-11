@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: kahoot
+    volumes:
+      - .:/kahoot-go
+    working_dir: /kahoot
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+    command: air -c .air.toml
+    environment:
+      - REDIS_ADDR=redis:6969
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6969:6969"
