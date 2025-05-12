@@ -1,8 +1,8 @@
-version: "3.8"
-
 services:
   app:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile.app
     container_name: kahoot
     volumes:
       - .:/kahoot-go
@@ -16,7 +16,9 @@ services:
       - REDIS_ADDR=redis:6969
 
   redis:
-    image: redis:7-alpine
+    build: 
+      context: .
+      dockerfile: Dockerfile.redis
     container_name: redis
     ports:
       - "6969:6969"

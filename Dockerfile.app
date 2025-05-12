@@ -5,8 +5,6 @@ WORKDIR /kahoot
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go run ./db/db.go
-
 
 # Execute
 EXPOSE 8080
