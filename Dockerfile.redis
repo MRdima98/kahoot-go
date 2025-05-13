@@ -1,6 +1,6 @@
 FROM redis:7-alpine
 
-COPY init-script.sh /usr/local/bin/init-script.sh
-RUN chmod +x /usr/local/bin/init-script.sh
+COPY dev.redis /dev.redis
+COPY start-redis.sh /start-redis.sh
 
-ENTRYPOINT redis-server --port 6969  && ./usr/local/bin/init-script.sh
+CMD ["sh", "/start-redis.sh"]
