@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"math/rand"
 	"time"
 
@@ -51,9 +52,10 @@ type Game struct {
 var lobbies = make(map[string]Game)
 var whichGame string
 
+// TODO: this should depened on enviromental variable
 func RedisClient() *redis.Client {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6969",
+		Addr:     "redis:6969",
 		Password: "",
 		DB:       0,
 	})

@@ -238,7 +238,7 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 
 	data, err := redis.Get(context.Background(), Questions).Result()
 	if err != nil {
-		log.Println("We can't find them")
+		log.Printf("Can't read \"%s\"", Questions)
 	}
 
 	err = json.Unmarshal([]byte(data), &questions)
@@ -248,7 +248,7 @@ func LeaderBoard(redis *redis.Client, lobby string) {
 
 	data, err = redis.Get(context.Background(), answered+lobby).Result()
 	if err != nil {
-		log.Println("We can't count")
+		log.Printf("Can't read \"%s\"", answered+lobby)
 	}
 
 	Answered, err = strconv.Atoi(data)
@@ -337,7 +337,7 @@ func loadQuestion(lobby string) {
 
 	rawQuestions, err := redis.Get(context.Background(), Questions).Result()
 	if err != nil {
-		log.Println("We can't find them")
+		log.Printf("Can't read \"%s\"", Questions)
 	}
 
 	err = json.Unmarshal([]byte(rawQuestions), &questions)
@@ -367,7 +367,7 @@ func getQuestion(lobby string) []question {
 
 	rawQuestions, err := redis.Get(context.Background(), Questions).Result()
 	if err != nil {
-		log.Println("We can't find them")
+		log.Printf("Can't read \"%s\"", Questions)
 	}
 
 	err = json.Unmarshal([]byte(rawQuestions), &questions)

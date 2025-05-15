@@ -414,7 +414,7 @@ func checkAnswer(answerColor string, redis *redis.Client, answer string, curr_pl
 
 	data, err := redis.Get(ctx, Questions).Result()
 	if err != nil {
-		log.Println("We can't find them")
+		log.Printf("Can't read \"%s\"", Questions)
 	}
 
 	err = json.Unmarshal([]byte(data), &questions)
