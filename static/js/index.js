@@ -41,20 +41,20 @@ function triggerTimer() {
   }, 1000);
 }
 
-function observeMutation() {
-  /** @type {HTMLDivElement} */
-  let targetNode = document.body;
-  const config = { childList: true, subtree: true };
-
-  const callback = () => {
-    /** @type {HTMLDivElement} */
-    let timer = document.getElementById("timer");
-
-    if (timer != null && Number(timer.innerHTML) === 30) {
-      triggerTimer();
-    }
-  };
-
-  const observer = new MutationObserver(callback);
-  observer.observe(targetNode, config);
-}
+// function observeMutation() {
+//   /** @type {HTMLDivElement} */
+//   let targetNode = document.body;
+//   const config = { childList: true, subtree: true };
+//
+//   const callback = () => {
+//     /** @type {HTMLDivElement} */
+//     let timer = document.getElementById("timer");
+//
+//     if (timer != null && Number(timer.innerHTML) === 30) {
+//       triggerTimer();
+//     }
+//   };
+//
+//   const observer = new MutationObserver(callback);
+//   observer.observe(targetNode, config);
+// }

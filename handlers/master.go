@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -59,6 +58,9 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 			SameSite: http.SameSiteLaxMode,
 		}
 		http.SetCookie(w, &cookie)
+		cookie.Name = "game"
+		cookie.Value = "not_started"
+		http.SetCookie(w, &cookie)
 		restart_game = true
 	} else {
 		lobby_code = lobby_cache.Value
@@ -74,11 +76,10 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	page_to_render := lobby
-	if restart_game {
-		page_to_render = "partialLobby"
-	}
+	// if restart_game {
+	// 	page_to_render = "partialLobby"
+	// }
 
-	fmt.Println("Restart: %s", restart_game)
 	questions := getQuestion(lobby_code)
 	err = tmpl.ExecuteTemplate(w, page_to_render, struct {
 		Path        string
@@ -168,9 +169,7 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if result["start-game"] != nil {
-			fmt.Println("Lobbies: ", lobbies)
 			lobby := result["lobby"].(string)
-			fmt.Println("single lobby: ", lobby)
 			loadQuestion(lobby)
 
 			if entry, ok := lobbies[lobby]; ok {
@@ -355,9 +354,10 @@ func loadQuestion(lobby string) {
 		questions[lobbies[lobby].curr_question],
 	})
 
+	log.Println("My lobby", lobby)
+
 	if err := lobbies[lobby].master.WriteMessage(websocket.TextMessage, game_start.Bytes()); err != nil {
 		log.Println(err)
-		return
 	}
 }
 
