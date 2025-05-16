@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"math/rand"
 	"time"
 

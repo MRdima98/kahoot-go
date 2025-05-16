@@ -1,5 +1,5 @@
 services:
-  app:
+  kahoot:
     build: 
       context: .
       dockerfile: Dockerfile.app
@@ -11,14 +11,32 @@ services:
       - "8080:8080"
     depends_on:
       - redis
+      - tailwind
     command: air -c .air.toml
     environment:
       - REDIS_ADDR=redis:6969
+    networks:
+      - backend
 
   redis:
     build: 
       context: .
       dockerfile: Dockerfile.redis
     container_name: redis
-    ports:
-      - "6969:6969"
+    expose:
+      - "6969"
+    networks:
+      - backend
+
+  tailwind:
+    build: 
+      context: .
+      dockerfile: Dockerfile.tailwind
+    working_dir: /kahoot
+    volumes:
+      - .:/kahoot-go
+    command: npx @tailwindcss/cli -i static/base.css -o static/style.css --watch
+
+networks:
+  backend:
+    driver: bridge
