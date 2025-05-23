@@ -67,17 +67,22 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	lobby_name, err := r.Cookie("lobby_name")
-	player_name, err := r.Cookie("player_code")
 	player_cached := false
-
-	if lobby_name != nil {
-		lobby, lobby_exist := lobbies[lobby]
-		if lobby_exist {
-			_, player_exist := lobby.players[player_name.Value]
-			player_cached = player_exist
+	lobby, err := r.Cookie("player_lobby")
+	if err == nil {
+		log.Printf("Lobby: %s", lobby.Value)
+		player, err := r.Cookie("player_name")
+		if err == nil {
+			lobby_obj, exist := lobbies[lobby.Value]
+			log.Printf("Lobby obj: %v. Lobby exist: %v", lobby_obj, exist)
+			if exist {
+				p, player_exist := lobby_obj.players[player.Value]
+				log.Printf("player: %v %v", p, player_exist)
+				player_cached = player_exist
+			}
 		}
 	}
+	log.Printf("Player is cached %v", player_cached)
 
 	err = tmpl.ExecuteTemplate(w, playerMenu, struct {
 		Path   string
@@ -106,35 +111,12 @@ func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 	var tmpl *template.Template
 	var curr_player Player
 	redis := RedisClient()
-	lobby_name, err := r.Cookie("lobby_name")
-	player_name, err := r.Cookie("player_code")
-	// TODO: Don't load then switch, load the controls directly
-	if lobby_name != nil && player_name != nil {
-		curr_player = Player{
-			Name:   player_name.Value,
-			Status: connected,
-			Answer: no_answer,
-			Score:  base_score,
-			Lobby:  lobby_name.Value,
-			conn:   conn,
-		}
-		savePlayerRedis(curr_player, redis)
-		savePlayer(curr_player)
 
-		tmpl, err = template.ParseFiles(playerControlsPath)
+	lobby, err := r.Cookie("player_lobby")
+	if err != nil {
+		player, err := r.Cookie("player_code")
 		if err != nil {
-			log.Println(err)
-		}
-
-		var tpl bytes.Buffer
-		err = tmpl.Execute(&tpl, readQuestion(redis, curr_player.Lobby))
-		if err != nil {
-			log.Printf("template execution: %s", err)
-		}
-
-		if err := conn.WriteMessage(websocket.TextMessage, tpl.Bytes()); err != nil {
-			log.Println(err)
-			return
+			curr_player = lobbies[lobby.Value].players[player.Value]
 		}
 	}
 
@@ -142,10 +124,6 @@ func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 		if curr_player == (Player{}) {
 			return errors.New("No player on this connection...somehow")
 		}
-
-		// TODO: This should allow the recconect, atm I don't feel like it.
-		// savePlayer(curr_player, redis)
-		delete(lobbies[curr_player.Lobby].players, curr_player.Name)
 
 		redis.Close()
 		return nil
@@ -180,26 +158,9 @@ func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 			lobby := result["lobby"].(string)
 			name := result["name"].(string)
 
-			lobby_code, err := r.Cookie("lobby_name")
-			if err != nil {
-				log.Printf("Reading player cookie: %s", err)
-			}
-
-			player_code, err := r.Cookie("player_code")
-			if err != nil {
-				log.Printf("Reading player cookie: %s", err)
-			}
-			log.Printf("Lobby cookie '%s' and player cookie '%s'", lobby_code, player_code)
-
-			// setPlayerCookie(lobby, name, w)
-
 			if invalidName(conn, name) {
 				continue
 			}
-
-			// if whichGame == sara && result["pwd"].(string) != "wasp" {
-			// 	continue
-			// }
 
 			curr_player = Player{
 				Name:   name,
@@ -209,7 +170,6 @@ func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 				Lobby:  lobby,
 				conn:   conn,
 			}
-
 			savePlayerRedis(curr_player, redis)
 			savePlayer(curr_player)
 
@@ -230,24 +190,6 @@ func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-}
-
-func setPlayerCookie(lobby, name string, w http.ResponseWriter) {
-	log.Println("setting player cookier")
-	playerCookie := http.Cookie{
-		Name:     "player_cookie",
-		Value:    lobby,
-		Path:     "/",
-		MaxAge:   3600,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	}
-
-	lobbyCookie := playerCookie
-	lobbyCookie.Value = lobby
-	http.SetCookie(w, &lobbyCookie)
-	http.SetCookie(w, &playerCookie)
 }
 
 func savePlayer(new_player Player) {

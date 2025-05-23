@@ -20,7 +20,16 @@
             const lobby = document.getElementsByName("lobby")[0].value
 
             await cookieStore.set({
-                name: "player_code",
+                name: 'player_lobby',
+                value: lobby,
+                expires: Date.now() + 1000 * 60 * 60 * 24,
+                path: "/",
+                sameSite: "lax",
+                secure: true
+            });
+
+            await cookieStore.set({
+                name: 'player_name',
                 value: name,
                 expires: Date.now() + 1000 * 60 * 60 * 24,
                 path: "/",

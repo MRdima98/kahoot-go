@@ -39,12 +39,15 @@ type question struct {
 	Pic     string `json:"path"`
 }
 
-// TODO: turns out I load the questions from somewhere else, skill issue.
-// I should move the "body" which is inside game somewhere else and organize
-// that code better
 func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 	lobby_cache, err := r.Cookie("lobby_name")
 	restart_game := r.Method == http.MethodPost
+
+	// TODO: Delete the lobby everytime you make a new game
+	if restart_game {
+		delete(lobbies, lobby_cache.Name)
+	}
+
 	var lobby_code string
 	if err != nil || restart_game {
 		lobby_code = GenRandomKey()
@@ -76,9 +79,6 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	page_to_render := lobby
-	// if restart_game {
-	// 	page_to_render = "partialLobby"
-	// }
 
 	questions := getQuestion(lobby_code)
 	err = tmpl.ExecuteTemplate(w, page_to_render, struct {
