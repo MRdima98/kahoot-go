@@ -788,6 +788,9 @@
   .text-blue-500 {
     color: var(--color-blue-500);
   }
+  .text-gray-900 {
+    color: var(--color-gray-900);
+  }
   .text-red-300 {
     color: var(--color-red-300);
   }

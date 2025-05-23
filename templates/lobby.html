@@ -1,8 +1,10 @@
 {{ template "head.html" .}}
 
+<div class="text-gray-900">
+    LOBBY
+</div>
 <div id="socket" hx-ext="ws" ws-connect="/questions"
     class="w-screen h-screen flex justify-center items-center relative">
-    asdkfja;sldkjfa;lsk
     {{ define "partialLobby" }}
 
     {{ template "questionInterface.html" . }}

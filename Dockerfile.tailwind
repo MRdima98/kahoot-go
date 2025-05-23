@@ -1,5 +1,8 @@
 FROM node
 
-RUN npm i -g tailwindcss 
+WORKDIR /kahoot
+COPY . .
 
-CMD ["npx tailwindcss -i static/base.css -o static/style.css --watch"]
+RUN npm install -g tailwindcss @tailwindcss/cli
+
+CMD ["npx", "@tailwindcss/cli",  "-i", "static/base.css", "-o", "static/style.css", "--watch"]
