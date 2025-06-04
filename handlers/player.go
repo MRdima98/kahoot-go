@@ -70,28 +70,38 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 	player_cached := false
 	lobby, err := r.Cookie("player_lobby")
 	if err == nil {
-		log.Printf("Lobby: %s", lobby.Value)
-		player, err := r.Cookie("player_name")
+		player, err := r.Cookie("player_code")
 		if err == nil {
 			lobby_obj, exist := lobbies[lobby.Value]
-			log.Printf("Lobby obj: %v. Lobby exist: %v", lobby_obj, exist)
 			if exist {
-				p, player_exist := lobby_obj.players[player.Value]
-				log.Printf("player: %v %v", p, player_exist)
+				_, player_exist := lobby_obj.players[player.Value]
 				player_cached = player_exist
 			}
 		}
 	}
-	log.Printf("Player is cached %v", player_cached)
+
+	var question question
+	if player_cached {
+		redis := RedisClient()
+		question = readQuestion(redis, lobby.Value)
+	}
 
 	err = tmpl.ExecuteTemplate(w, playerMenu, struct {
 		Path   string
 		Sara   bool
 		Cached bool
+		Ans1   string
+		Ans2   string
+		Ans3   string
+		Ans4   string
 	}{
 		r.URL.Path,
 		sara,
 		player_cached,
+		question.Ans1,
+		question.Ans2,
+		question.Ans3,
+		question.Ans4,
 	})
 
 	if err != nil {
@@ -113,9 +123,9 @@ func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 	redis := RedisClient()
 
 	lobby, err := r.Cookie("player_lobby")
-	if err != nil {
+	if err == nil {
 		player, err := r.Cookie("player_code")
-		if err != nil {
+		if err == nil {
 			curr_player = lobbies[lobby.Value].players[player.Value]
 		}
 	}

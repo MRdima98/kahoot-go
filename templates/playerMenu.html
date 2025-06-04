@@ -8,7 +8,7 @@
     </div>
 
     {{ if .Cached}}
-    {{ template "playerControls.html"}}
+    {{ template "playerControls.html" .}}
     {{ else }}
     {{ template "playerForm.html"}}
     {{end}}
@@ -29,7 +29,7 @@
             });
 
             await cookieStore.set({
-                name: 'player_name',
+                name: 'player_code',
                 value: name,
                 expires: Date.now() + 1000 * 60 * 60 * 24,
                 path: "/",
