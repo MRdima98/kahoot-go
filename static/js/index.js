@@ -1,8 +1,12 @@
 /** @type {Number} */
 let timer_id;
-window.addEventListener("load", function () {
+let countDown = 10;
+
+document.addEventListener("htmx:wsAfterMessage", function(event) {
+  countDown = 10;
+  clearInterval(timer_id)
   triggerTimer();
-  observeMutation();
+  document.gameSocket = event.detail.socketWrapper;
 });
 
 function fixDim() {
@@ -16,45 +20,23 @@ function fixDim() {
 }
 
 function triggerTimer() {
-  /** @type {HTMLDivElement} */
-  const timer = document.getElementById("timer");
   /** @type {HTMLButtonElement} */
-  const timeout = document.getElementById("timeout");
   if (timer_id != null) {
     clearInterval(timer_id);
   }
+  let timer = null;
 
-  var start = Date.now();
-  timer_id = setInterval(function () {
-    /** @type {Number} */
-    let delta = Date.now() - start;
-    /** @type {Number} */
-    let countDown = 60;
-    countDown -= Math.floor(delta / 1000);
-
+  timer_id = setInterval(function() {
+    countDown -= 1;
+    if (!timer) {
+      timer = document.getElementById("timer");
+    }
     timer.innerHTML = countDown;
 
     if (countDown <= 0) {
-      timeout.click();
       clearInterval(timer_id);
+      console.log(document.gameSocket)
+      document.gameSocket.send('timeout')
     }
   }, 1000);
 }
-
-// function observeMutation() {
-//   /** @type {HTMLDivElement} */
-//   let targetNode = document.body;
-//   const config = { childList: true, subtree: true };
-//
-//   const callback = () => {
-//     /** @type {HTMLDivElement} */
-//     let timer = document.getElementById("timer");
-//
-//     if (timer != null && Number(timer.innerHTML) === 30) {
-//       triggerTimer();
-//     }
-//   };
-//
-//   const observer = new MutationObserver(callback);
-//   observer.observe(targetNode, config);
-// }

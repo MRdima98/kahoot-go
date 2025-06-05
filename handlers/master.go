@@ -121,11 +121,6 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 
 	redis := RedisClient()
 
-	// lobby_HTML := `<strong id="lobby" hx-swap-oob="outerHTML" > %s </strong>`
-	// lobby_input_HTML := `<input id="lobby-input" type="text" name="lobby" value="%s" hidden />`
-	// lobby_HTML = fmt.Sprintf(lobby_HTML, lobby)
-	// lobby_input_HTML = fmt.Sprintf(lobby_input_HTML, lobby)
-
 	if entry, ok := lobbies[lobby]; ok {
 		entry.master = conn
 		lobbies[lobby] = entry
@@ -135,16 +130,6 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 			players: make(map[string]Player),
 		}
 	}
-
-	// if err := conn.WriteMessage(websocket.TextMessage, []byte(lobby_HTML)); err != nil {
-	// 	log.Println(err)
-	// 	return
-	// }
-	//
-	// if err := conn.WriteMessage(websocket.TextMessage, []byte(lobby_input_HTML)); err != nil {
-	// 	log.Println(err)
-	// 	return
-	// }
 
 	conn.SetCloseHandler(func(code int, text string) error {
 		// delete(lobbies, lobby)
@@ -164,8 +149,8 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("Can't parse input", err)
 		}
 
-		if result["timeout"] != nil {
-			LeaderBoard(redis, result["lobby"].(string))
+		if string(message) == "timeout" {
+			LeaderBoard(redis, lobby)
 		}
 
 		if result["start-game"] != nil {
@@ -181,7 +166,6 @@ func GameMasterSocketHandler(w http.ResponseWriter, r *http.Request) {
 		// TODO: we also need to nuke this previous lobby, only save on redis the
 		// info and everything else should just be cleared
 		if result["refresh-lobby"] != nil {
-			log.Println("refresh")
 			delete(lobbies, lobby)
 			lobby := result["lobby-input-refresh"].(string)
 			lobbies[lobby] = Game{
