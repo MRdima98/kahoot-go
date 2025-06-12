@@ -28,15 +28,6 @@ services:
     networks:
       - backend
 
-  # tailwind:
-  #   build: 
-  #     context: .
-  #     dockerfile: Dockerfile.tailwind
-  #   volumes:
-  #     - .:/kahoot
-  #   working_dir: /kahoot
-  #   command: npx @tailwindcss/cli -i static/base.css -o static/style.css --watch
-
 networks:
   backend:
     driver: bridge
