@@ -49,10 +49,10 @@ func main() {
 	http.HandleFunc("/socket", handlers.PlayerSocketHandler)
 	http.HandleFunc("/questions", handlers.GameMasterSocketHandler)
 
-	srv := &http.Server{Addr: ":8080"}
+	srv := &http.Server{Addr: ":8001"}
 
 	go func() {
-		fmt.Println("Starting service on port 8080")
+		fmt.Println("Starting service on port 8001")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server error: %v", err)
 		}
