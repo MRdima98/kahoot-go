@@ -329,6 +329,10 @@ func loadQuestion(lobby string) {
 		log.Println("Can't unmarshal them data")
 	}
 
+	if len(questions) <= lobbies[lobby].curr_question {
+		return
+	}
+
 	var game_start bytes.Buffer
 	err = gameTmpl.ExecuteTemplate(&game_start, "body", struct {
 		Answered int
@@ -337,8 +341,6 @@ func loadQuestion(lobby string) {
 		lobbies[lobby].answered,
 		questions[lobbies[lobby].curr_question],
 	})
-
-	log.Println("My lobby", lobby)
 
 	if err := lobbies[lobby].master.WriteMessage(websocket.TextMessage, game_start.Bytes()); err != nil {
 		log.Println(err)

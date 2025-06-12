@@ -150,7 +150,6 @@ func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 		err = json.Unmarshal(p, &result)
 		if err != nil {
 			log.Println("Player handler unmarshall error", err)
-			return
 		}
 
 		switch {
@@ -319,6 +318,10 @@ func readQuestion(redis *redis.Client, lobby string) question {
 	err = json.Unmarshal([]byte(tmp), &options)
 	if err != nil {
 		log.Println("Unmarshal err: ", err)
+	}
+
+	if len(options) <= lobbies[lobby].curr_question {
+		return question{}
 	}
 
 	return options[lobbies[lobby].curr_question]

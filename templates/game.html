@@ -13,9 +13,9 @@
             <div class="flex justify-around items-center w-full">
                 <div class="flex flex-col justify-center items-center">
                     <span>
-                        <!-- <div id="n_answered" hx-swap-oob="innerHTML"> -->
-                        <!--     {{ .Answered }} -->
-                        <!-- </div> -->
+                        <div id="n_answered" hx-swap-oob="innerHTML">
+                            {{ .Answered }}
+                        </div>
                         <form hidden>
                             <button id="timeout" ws-send hx-post="/questions">
                                 <input type="text" name="timeout" value="timeout" />
