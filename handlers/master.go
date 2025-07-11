@@ -81,6 +81,7 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 	page_to_render := lobby
 
 	questions := getQuestion(lobby_code)
+	log.Println("Quest:", questions)
 	err = tmpl.ExecuteTemplate(w, page_to_render, struct {
 		Path        string
 		Link        string
