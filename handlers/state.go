@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"math/rand"
-	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -56,7 +55,7 @@ var whichGame string
 func RedisClient() *redis.Client {
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS"),
+		Addr:     "host.docker.internal:6379",
 		Password: "",
 		DB:       0,
 	})
