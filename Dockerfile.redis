@@ -1,6 +1,0 @@
-FROM redis:7-alpine
-
-COPY dev.redis /dev.redis
-COPY start-redis.sh /start-redis.sh
-
-CMD ["sh", "/start-redis.sh"]

@@ -11,6 +11,7 @@ import (
 	"text/template"
 
 	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
 )
 
 const (
@@ -38,6 +39,11 @@ var tmpl = template.Must(
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
