@@ -55,7 +55,7 @@ var whichGame string
 func RedisClient() *redis.Client {
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "host.docker.internal:6379",
+		Addr:     "127.0.0.1:6379",
 		Password: "",
 		DB:       0,
 	})
@@ -63,21 +63,17 @@ func RedisClient() *redis.Client {
 	return rdb
 }
 
-// if err != nil {
-// 	_, file, line, _ := runtime.Caller(1)
-// 	log.Fatalf("Not a numba %s:%d - %v", file, line, err)
-// }
-
 // TODO: You should check if the code is already in use
 func GenRandomKey() string {
-	const alfanumeric = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	// const numeric = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	const numeric = "1234567890"
 	lobby := ""
-	const max_range = len(alfanumeric)
+	const max_range = len(numeric)
 
 	for range 4 {
 		rand.New(rand.NewSource(time.Now().Unix()))
 		i := rand.Intn(max_range)
-		lobby = lobby + string(alfanumeric[i])
+		lobby = lobby + string(numeric[i])
 	}
 
 	return lobby

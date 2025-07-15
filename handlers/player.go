@@ -82,8 +82,7 @@ func PlayerHandler(w http.ResponseWriter, r *http.Request) {
 
 	var question question
 	if player_cached {
-		redis := RedisClient()
-		question = readQuestion(redis, lobby.Value)
+		question = readQuestion(RedisClient(), lobby.Value)
 	}
 
 	err = tmpl.ExecuteTemplate(w, playerMenu, struct {
@@ -123,10 +122,14 @@ func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 	redis := RedisClient()
 
 	lobby, err := r.Cookie("player_lobby")
-	if err == nil {
+	lobby_obj, lobby_exist := lobbies[lobby.Value]
+	if err == nil && lobby_exist {
 		player, err := r.Cookie("player_code")
-		if err == nil {
-			curr_player = lobbies[lobby.Value].players[player.Value]
+		pl, player_exist := lobby_obj.players[player.Value]
+		if err == nil && player_exist {
+			curr_player = pl
+			curr_player.conn = conn
+			lobbies[lobby.Value].players[player.Value] = curr_player
 		}
 	}
 
