@@ -11,10 +11,6 @@
         class="border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold px-4 py-2 rounded-lg transition duration-300 ease-in-out absolute top-26 right-50">
         New game
     </button>
-    <button hx-post="/lobby" hx-swap="innerHTML" hx-target="#socket"
-        class="border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold px-4 py-2 rounded-lg transition duration-300 ease-in-out absolute top-26 right-50">
-        New game
-    </button>
     {{ end }}
     {{ template "partialLobby" .}}
 </div>

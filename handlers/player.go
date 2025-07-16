@@ -122,14 +122,16 @@ func PlayerSocketHandler(w http.ResponseWriter, r *http.Request) {
 	redis := RedisClient()
 
 	lobby, err := r.Cookie("player_lobby")
-	lobby_obj, lobby_exist := lobbies[lobby.Value]
-	if err == nil && lobby_exist {
+	if err == nil {
+		lobby_obj, lobby_exist := lobbies[lobby.Value]
 		player, err := r.Cookie("player_code")
-		pl, player_exist := lobby_obj.players[player.Value]
-		if err == nil && player_exist {
-			curr_player = pl
-			curr_player.conn = conn
-			lobbies[lobby.Value].players[player.Value] = curr_player
+		if err == nil && lobby_exist {
+			pl, player_exist := lobby_obj.players[player.Value]
+			if player_exist {
+				curr_player = pl
+				curr_player.conn = conn
+				lobbies[lobby.Value].players[player.Value] = curr_player
+			}
 		}
 	}
 

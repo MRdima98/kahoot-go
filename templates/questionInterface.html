@@ -2,8 +2,8 @@
     <div class="h-full w-full flex justify-center items-center overflow-hidden">
         <main
             class="flex flex-col gap-10 justify-center items-center self-center h-screen w-10/12">
-            <span>Unisciti al seguente link <strong class="text-yellow-400"> {{ .Link }} </strong></span>
-            <span class="flex items-center">
+            <span class="backdrop-blur-lg">Unisciti al seguente link <strong class="text-yellow-400"> {{ .Link }} </strong></span>
+            <span class="flex items-center backdrop-blur-lg ">
                 oppure usa il QR code
                 <img src="static/svgs/sara-qr.svg" width="100" height="100" />
             </span>
@@ -12,7 +12,7 @@
                 <input id="lobby-input" type="text" name="lobby" value="{{ .Lobby }}" hidden />
                 <input type="text" name="start-game" value="start-game" hidden />
                 <button ws-send hx-post="/questions" hx-target="#socket"
-                    class="border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold px-4 py-2 rounded-lg transition duration-300 ease-in-out">
+                    class="border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold px-4 py-2 rounded-lg transition duration-300 ease-in-out backdrop-blur-lg">
                     Sara
                 </button>
             </form>
