@@ -92,7 +92,7 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 		Answered    int
 	}{
 		r.URL.Path,
-		"quizaara.mrdima98.dev/player",
+		"kahoot.mrdima98.dev/player",
 		lobby_code,
 		lobbies[lobby].players,
 		restart_game,

@@ -6,3 +6,9 @@
   --color-kahootYellow: #FFD64D;
   --color-kahootBlue: #0099E6;
 }
+
+body {
+  background-image: url(/static/pictures/otter.jpg);
+  background-size: auto;
+  background-repeat: none;
+}

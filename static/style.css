@@ -1,4 +1,4 @@
-/*! tailwindcss v4.1.8 | MIT License | https://tailwindcss.com */
+/*! tailwindcss v4.1.11 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
 @layer theme {
@@ -11,14 +11,12 @@
     --color-red-500: oklch(63.7% 0.237 25.331);
     --color-yellow-300: oklch(90.5% 0.182 98.111);
     --color-yellow-400: oklch(85.2% 0.199 91.936);
-    --color-green-500: oklch(72.3% 0.219 149.579);
     --color-blue-200: oklch(88.2% 0.059 254.128);
     --color-blue-400: oklch(70.7% 0.165 254.624);
     --color-blue-500: oklch(62.3% 0.214 259.815);
     --color-blue-800: oklch(42.4% 0.199 265.638);
     --color-violet-400: oklch(70.2% 0.183 293.541);
     --color-gray-200: oklch(92.8% 0.006 264.531);
-    --color-gray-400: oklch(70.7% 0.022 261.325);
     --color-white: #fff;
     --spacing: 0.25rem;
     --text-xs: 0.75rem;
@@ -193,6 +191,9 @@
   }
   .relative {
     position: relative;
+  }
+  .static {
+    position: static;
   }
   .top-26 {
     top: calc(var(--spacing) * 26);
@@ -388,9 +389,6 @@
   .bg-gray-200 {
     background-color: var(--color-gray-200);
   }
-  .bg-gray-400 {
-    background-color: var(--color-gray-400);
-  }
   .bg-gruvbox {
     background-color: var(--color-gruvbox);
   }
@@ -495,6 +493,11 @@
       }
     }
   }
+}
+body {
+  background-image: url(/static/pictures/otter.jpg);
+  background-size: auto;
+  background-repeat: none;
 }
 @property --tw-rotate-x {
   syntax: "*";

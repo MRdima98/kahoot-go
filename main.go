@@ -47,8 +47,8 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/static/", http.StripPrefix("/static", fs))
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/lobby", handlers.LobbyHandler)
 	http.HandleFunc("/player", handlers.PlayerHandler)
