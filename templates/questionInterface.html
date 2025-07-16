@@ -7,19 +7,21 @@
                 oppure usa il QR code
                 <img src="static/svgs/sara-qr.svg" width="100" height="100" />
             </span>
+            <div id="lobby" class="text-back">Codice partita: {{ .Lobby }}</div>
+            <form>
             <!-- TODO: Move this logic into the socket events; dummy -->
             <form>
                 <input id="lobby-input" type="text" name="lobby" value="{{ .Lobby }}" hidden />
                 <input type="text" name="start-game" value="start-game" hidden />
                 <button ws-send hx-post="/questions" hx-target="#socket"
                     class="border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold px-4 py-2 rounded-lg transition duration-300 ease-in-out backdrop-blur-lg">
-                    Sara
+                        Inizia!
                 </button>
             </form>
-            <form>
                 <input id="lobby-input-refresh" type="text" name="lobby" value="{{ .Lobby }}" hidden />
                 <input type="text" name="refresh-lobby" value="refresh-lobby" hidden />
             </form>
         </main>
+
     </div>
 </div>
