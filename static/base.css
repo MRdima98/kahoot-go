@@ -8,7 +8,7 @@
 }
 
 body {
-  background-image: url(/static/pictures/otter.jpg);
+  /* background-image: url(/static/pictures/otter.webp); */
   background-size: cover;
   background-repeat: none;
 }
