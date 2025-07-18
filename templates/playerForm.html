@@ -1,16 +1,21 @@
 <div id="UI" class="flex flex-col justify-center items-center h-96 text-white">
     <form id="form" ws-send class="flex flex-col gap-1 justify-center items-center h-full w-full">
-        <span> Quizaara: Kahoot per Saretta</span>
-        <span class="mt-4"> Give me a name! </span>
-        <input class="border border-violet-400 rounded-lg" type="text" name="name" />
-        <span class="mt-4"> Which lobby? </span>
-        <input class="border border-violet-400 rounded-lg" type="text" name="lobby" />
+        <!-- <span> Quizaara: Kahoot per Saretta</span> -->
+        <span> Kamoot: Kahoot per Giada</span>
+        <span class="mt-4"> Comme t'accatte? </span>
+        <input class="border border-green-400 rounded-lg" type="text" name="name" />
+        <span class="mt-4"> ’O codice d’a partita </span>
+        <input class="border border-green-400 rounded-lg" type="text" name="lobby" />
         {{ if .Sara }}
         <span class="mt-4"> La password; vichingo! </span>
         <input class="border border-violet-400 rounded-lg" type="text" name="pwd" />
         {{ end }}
-        <button class="border border-blue-400 rounder-lg bg-blue-800" type="submit">
-            La accendiamo?
+        <!-- <button class="border border-blue-400 rounder-lg bg-blue-800 mt-8" type="submit"> -->
+        <!--     Aggreghete -->
+        <!-- </button> -->
+        <button 
+            class="mt-8 border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold px-4 py-2 rounded-lg transition duration-300 ease-in-out backdrop-blur-lg">
+            Aggreghete
         </button>
     </form>
 </div>

@@ -3,7 +3,7 @@
 <div id="socket" hx-ext="ws" ws-connect="/questions"
     class="asdf w-screen h-screen flex justify-center items-center relative">
     {{ define "body"}}
-    <div id="body" class="bg-gray-200 p-6 w-4/5 h-4/5 text-5xl">
+    <div id="body" class="p-6 w-4/5 h-4/5 text-5xl backdrop-blur-lg">
         <div class="flex flex-col justify-between items-center w-full h-full">
             <div class="flex justify-center items-center font-bold p-4 bg-blue-200 w-full
                 py-8
@@ -22,7 +22,7 @@
                             </button>
                         </form>
                     </span>
-                    <span>ans</span>
+                    <span>risposte</span>
                 </div>
                 <img id="picture" onload="fixDim()" class="p-4 w-120" src="{{ .Current.Pic }}" />
                 <div id="timer" class="w-24 h-24 bg-red-500 rounded-full flex justify-center items-center ">

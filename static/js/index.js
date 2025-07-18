@@ -1,9 +1,9 @@
 /** @type {Number} */
 let timer_id;
-let countDown = 10;
+let countDown = 30;
 
 document.addEventListener("htmx:wsAfterMessage", function(event) {
-  countDown = 10;
+  countDown = 30;
   clearInterval(timer_id)
   triggerTimer();
   document.gameSocket = event.detail.socketWrapper;
