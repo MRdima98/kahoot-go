@@ -45,7 +45,7 @@ func LobbyHandler(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: Delete the lobby everytime you make a new game
 	if restart_game {
-		delete(lobbies, lobby_cache.Name)
+		delete(lobbies, lobby_cache.Value)
 	}
 
 	var lobby_code string
