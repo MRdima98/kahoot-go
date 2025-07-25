@@ -3,9 +3,8 @@
 
 This is a quick port from my nextjs version to go+htmx.
 
-Demo link master: kahoot.mrdima98.dev/lobby
+[Demo link](kahoot.mrdima98.dev/lobby)
 
-Demo link player: kahoot.mrdima98.dev/lobby
 
 ## How to run
 
